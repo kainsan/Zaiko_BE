@@ -1,5 +1,6 @@
 package com.project.Zaiko.controller;
 
+import com.project.Zaiko.dto.SearchProductDTO;
 import com.project.Zaiko.jpa.ProductEntity;
 import com.project.Zaiko.service.MasterProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,5 +27,14 @@ public class MasterProductController {
     ){
         Page<ProductEntity> masterProducts= masterProductService.getAllProduct(page, limit);
         return new ResponseEntity<>(masterProducts, HttpStatus.OK);
+    }
+    @GetMapping("/master-product/search")
+    public ResponseEntity<Page<ProductEntity>> searchProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int limit,
+            SearchProductDTO searchProductDTO
+    ){
+        Page<ProductEntity> searchProducts= masterProductService.searchProduct(searchProductDTO,page, limit);
+        return new ResponseEntity<>(searchProducts, HttpStatus.OK);
     }
 }
