@@ -1,5 +1,6 @@
 package com.project.Zaiko.repository;
 
+import com.project.Zaiko.dto.MasterProductDTO;
 import com.project.Zaiko.jpa.ProductEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,8 +13,18 @@ import org.springframework.stereotype.Repository;
 public interface MasterProductRepostory extends JpaRepository<ProductEntity, Long> {
 
     @Query("""
-    select p
+    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc)
     from ProductEntity p
+    left join Category1Entity c1 on p.categoryCode1 = c1.categoryCode and p.companyId = c1.companyId
+    left join Category2Entity c2 on p.categoryCode2 = c2.categoryCode and p.companyId = c2.companyId
+    left join Category3Entity c3 on p.categoryCode3 = c3.categoryCode and p.companyId = c3.companyId
+    left join Category4Entity c4 on p.categoryCode4 = c4.categoryCode and p.companyId = c4.companyId
+    left join Category5Entity c5 on p.categoryCode5 = c5.categoryCode and p.companyId = c5.companyId
+    left join RepositoryEntity re on p.repositoryId = re.repositoryId and p.companyId = re.companyId
+    left join LocationEntity le  on p.locationId = le.locationId and p.companyId = le.companyId
+    left join UnitNameEntity uCs on p.packCsUnitCode = uCs.unitCode
+    left join UnitNameEntity uBl on p.packBlUnitCode = uBl.unitCode
+    left join UnitNameEntity uPc on p.pieceUnitCode  = uPc.unitCode
     where
         (:productCodeFrom is null or p.productCode >= :productCodeFrom)
     and (:productCodeTo   is null or p.productCode <= :productCodeTo)
@@ -32,7 +43,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     and (:locationId   is null or p.locationId   = :locationId)
     and (:isSet is null or p.isSet   = :isSet)
 """)
-    Page<ProductEntity> searchProduct(
+    Page<MasterProductDTO> searchProduct(
             @Param("productCodeFrom") String productCodeFrom,
             @Param("productCodeTo")   String productCodeTo,
 
@@ -52,5 +63,38 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
             Pageable pageable
     );
 
+    @Query("""
+    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc)
+        
+    from ProductEntity p
+    left join Category1Entity c1 on p.categoryCode1 = c1.categoryCode and p.companyId = c1.companyId
+    left join Category2Entity c2 on p.categoryCode2 = c2.categoryCode and p.companyId = c2.companyId
+    left join Category3Entity c3 on p.categoryCode3 = c3.categoryCode and p.companyId = c3.companyId
+    left join Category4Entity c4 on p.categoryCode4 = c4.categoryCode and p.companyId = c4.companyId
+    left join Category5Entity c5 on p.categoryCode5 = c5.categoryCode and p.companyId = c5.companyId
+    left join RepositoryEntity re on p.repositoryId = re.repositoryId and p.companyId = re.companyId
+    left join LocationEntity le  on p.locationId = le.locationId and p.companyId = le.companyId
+    left join UnitNameEntity uCs on p.packCsUnitCode = uCs.unitCode
+    left join UnitNameEntity uBl on p.packBlUnitCode = uBl.unitCode
+    left join UnitNameEntity uPc on p.pieceUnitCode  = uPc.unitCode
+    """)
+    Page<MasterProductDTO> getAllProduct(Pageable pageable);
 
+    @Query("""
+    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc)
+    from ProductEntity p
+    left join Category1Entity c1 on p.categoryCode1 = c1.categoryCode and p.companyId = c1.companyId
+    left join Category2Entity c2 on p.categoryCode2 = c2.categoryCode and p.companyId = c2.companyId
+    left join Category3Entity c3 on p.categoryCode3 = c3.categoryCode and p.companyId = c3.companyId
+    left join Category4Entity c4 on p.categoryCode4 = c4.categoryCode and p.companyId = c4.companyId
+    left join Category5Entity c5 on p.categoryCode5 = c5.categoryCode and p.companyId = c5.companyId
+    left join RepositoryEntity re on p.repositoryId = re.repositoryId and p.companyId = re.companyId
+    left join LocationEntity le  on p.locationId = le.locationId and p.companyId = le.companyId
+    left join UnitNameEntity uCs on p.packCsUnitCode = uCs.unitCode
+    left join UnitNameEntity uBl on p.packBlUnitCode = uBl.unitCode
+    left join UnitNameEntity uPc on p.pieceUnitCode  = uPc.unitCode
+    where
+    (p.productId = :productId)
+""")
+    MasterProductDTO getProductByProductId( @Param("productId") Long productId);
 }

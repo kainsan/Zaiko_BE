@@ -1,5 +1,6 @@
 package com.project.Zaiko.service;
 
+import com.project.Zaiko.dto.MasterProductDTO;
 import com.project.Zaiko.dto.SearchProductDTO;
 import com.project.Zaiko.jpa.ProductEntity;
 import com.project.Zaiko.repository.MasterProductRepostory;
@@ -20,14 +21,13 @@ public class IMasterProductService implements MasterProductService {
 
 
     @Override
-    public Page<ProductEntity> getAllProduct(int page, int size) {
+    public Page<MasterProductDTO> getAllProduct(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<ProductEntity> pageResult = masterProductRepostory.findAll(pageable);
-        return pageResult;
+        return masterProductRepostory.getAllProduct(pageable);
     }
 
     @Override
-    public Page<ProductEntity> searchProduct(SearchProductDTO searchProductDTO, int page, int size) {
+    public Page<MasterProductDTO> searchProduct(SearchProductDTO searchProductDTO, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return masterProductRepostory.searchProduct(
                 searchProductDTO.getProductCodeFrom(),
@@ -45,6 +45,11 @@ public class IMasterProductService implements MasterProductService {
                 searchProductDTO.getIsSet(),
                 pageable
         );
+    }
+
+    @Override
+    public MasterProductDTO getProductByProductId(Long productId) {
+        return masterProductRepostory.getProductByProductId(productId);
     }
 
 }
