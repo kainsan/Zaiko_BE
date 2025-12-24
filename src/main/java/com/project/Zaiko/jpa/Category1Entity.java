@@ -24,7 +24,7 @@ public class Category1Entity extends CommonEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	// CompanyId
-	@Id
+
 	@Column(name = "company_id")
 	@JsonProperty("companyId")
 	private Integer companyId;
