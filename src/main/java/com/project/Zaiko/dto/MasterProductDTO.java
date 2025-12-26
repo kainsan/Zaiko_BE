@@ -20,4 +20,5 @@ public class MasterProductDTO {
     private UnitNameEntity packCsUnitName;
     private UnitNameEntity packBlUnitName;
     private UnitNameEntity pieceUnitName;
+    private SupplierEntity supplierEntity;
 }
