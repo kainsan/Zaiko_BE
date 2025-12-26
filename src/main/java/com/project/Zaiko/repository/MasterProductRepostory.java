@@ -43,6 +43,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     and (:repositoryId is null or p.repositoryId = :repositoryId)
     and (:locationId   is null or p.locationId   = :locationId)
     and (:isSet is null or p.isSet   = :isSet)
+    and p.delFlg = '1'
 """)
     Page<MasterProductDTO> searchProduct(
             @Param("productCodeFrom") String productCodeFrom,
@@ -78,7 +79,8 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     left join UnitNameEntity uCs on p.packCsUnitCode = uCs.unitCode
     left join UnitNameEntity uBl on p.packBlUnitCode = uBl.unitCode
     left join UnitNameEntity uPc on p.pieceUnitCode  = uPc.unitCode
-    left join SupplierEntity se on p.supplierId = se.supplierId  
+    left join SupplierEntity se on p.supplierId = se.supplierId
+    where p.delFlg = '1'
     """)
     Page<MasterProductDTO> getAllProduct(Pageable pageable);
 
@@ -98,6 +100,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     left join SupplierEntity se on p.supplierId = se.supplierId
     where
     (p.productId = :productId)
+    and p.delFlg = '1'
 """)
     MasterProductDTO getProductByProductId( @Param("productId") Long productId);
 }

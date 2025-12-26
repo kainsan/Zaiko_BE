@@ -54,5 +54,17 @@ public class MasterProductController {
 
         return new ResponseEntity<>(updateProduct, HttpStatus.OK);
     }
+    @PostMapping("/master-product/delete/{productId}")
+    public ResponseEntity<MasterProductDTO> deleteProduct(@PathVariable Long productId) {
+        MasterProductDTO deleteProduct = masterProductService.deleteProductByProductId(productId);
+
+        return new ResponseEntity<>(deleteProduct, HttpStatus.OK);
+    }
+
+        @PostMapping("/master-product/add-product")
+        public ResponseEntity<MasterProductDTO> createProduct(@RequestBody ProductEntity product) {
+            MasterProductDTO createProduct = masterProductService.createProduct(product);
+            return new ResponseEntity<>(createProduct, HttpStatus.OK);
+        }
 }
 

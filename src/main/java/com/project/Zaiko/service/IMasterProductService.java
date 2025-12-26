@@ -120,6 +120,24 @@ public class IMasterProductService implements MasterProductService {
         return masterProductRepostory.getProductByProductId(productId);
     }
 
+    @Override
+    public MasterProductDTO deleteProductByProductId(Long productId) {
+        ProductEntity product = masterProductRepostory.findById(productId).orElse(null);
+        if (product != null) {
+            product.setDelFlg("0");
+            masterProductRepostory.save(product);
+        }
+        return masterProductRepostory.getProductByProductId(productId);
+    }
+
+    @Override
+    public MasterProductDTO createProduct(ProductEntity product) {
+        product.setDelFlg("1");
+        product.setCompanyId(1);
+        masterProductRepostory.save(product);
+        return masterProductRepostory.getProductByProductId(product.getProductId());
+    }
+
     private String validateZeroOne(String value) {
         if (value == null) return "0";
         if ("1".equals(value) || "true".equalsIgnoreCase(value)) {

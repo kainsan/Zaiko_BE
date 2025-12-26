@@ -15,4 +15,8 @@ public interface MasterProductService {
     MasterProductDTO getProductByProductId(Long productId);
 
     MasterProductDTO updateProductByProductId(Long productId, ProductEntity product);
+
+    MasterProductDTO deleteProductByProductId(Long productId);
+
+    MasterProductDTO createProduct(ProductEntity product);
 }
