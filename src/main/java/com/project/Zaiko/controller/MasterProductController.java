@@ -63,7 +63,7 @@ public class MasterProductController {
 
         @PostMapping("/master-product/add-product")
         public ResponseEntity<MasterProductDTO> createProduct(@RequestBody ProductEntity product) {
-            MasterProductDTO createProduct = masterProductService.createProduct(product);
+            MasterProductDTO createProduct = masterProductService.createProduct(product);   
             return new ResponseEntity<>(createProduct, HttpStatus.OK);
         }
 }

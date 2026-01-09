@@ -43,7 +43,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     and (:repositoryId is null or p.repositoryId = :repositoryId)
     and (:locationId   is null or p.locationId   = :locationId)
     and (:isSet is null or p.isSet   = :isSet)
-    and p.delFlg = '1'
+    and p.delFlg = '0'
 """)
     Page<MasterProductDTO> searchProduct(
             @Param("productCodeFrom") String productCodeFrom,
