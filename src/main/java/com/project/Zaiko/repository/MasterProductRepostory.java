@@ -80,7 +80,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     left join UnitNameEntity uBl on p.packBlUnitCode = uBl.unitCode
     left join UnitNameEntity uPc on p.pieceUnitCode  = uPc.unitCode
     left join SupplierEntity se on p.supplierId = se.supplierId
-    where p.delFlg = '1'
+    where p.delFlg = '0'
     """)
     Page<MasterProductDTO> getAllProduct(Pageable pageable);
 
@@ -100,7 +100,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     left join SupplierEntity se on p.supplierId = se.supplierId
     where
     (p.productId = :productId)
-    and p.delFlg = '1'
+    and p.delFlg = '0'
 """)
     MasterProductDTO getProductByProductId( @Param("productId") Long productId);
 }

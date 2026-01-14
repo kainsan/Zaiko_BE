@@ -1,6 +1,7 @@
 package com.project.Zaiko.repository;
 
 import com.project.Zaiko.dto.InventoryInputDTO;
+import com.project.Zaiko.dto.InventoryInputPlanFlatDTO;
 import com.project.Zaiko.jpa.InventoryInputEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -111,9 +112,10 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
             Pageable pageable);
 
     @Query("""
-    select new com.project.Zaiko.dto.InventoryInputPlanDTO(
+    select new com.project.Zaiko.dto.InventoryInputPlanFlatDTO(
         i, d1.destinationCode, d1.departmentName, s1.supplierCode, s1.supplierName, ce.customerCode, ce.customerName, r1.repositoryCode, r1.repositoryName,
-        ipe, p.productCode, p.name1, r2.repositoryCode, l.locationCode, u1.unitName, u2.unitName, u3.unitName
+        ipe, p.productCode, p.name1, r2.repositoryCode ,r2.repositoryName, l.locationCode, u1.unitName, u2.unitName, u3.unitName, p.dateTimeMngType, p.isDateTimeMng, p.isNumberMng,
+        ipe.totalPlanQuantity, p.isPackCsInput, p.isPackBlInput, p.isPieceInput
     )
     from InventoryInputEntity i
     left join InventoryPlanInputDetailEntity ipe on i.inventoryInputId = ipe.inventoryInputId
@@ -129,5 +131,5 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
     left join UnitNameEntity u3 on p.pieceUnitCode = u3.unitCode
     where i.inventoryInputId = :id and i.delFlg = '0'
     """)
-    List<Object> getInventoryInputById(Long id);
+    List<InventoryInputPlanFlatDTO> getInventoryInputById(Long id);
 }
