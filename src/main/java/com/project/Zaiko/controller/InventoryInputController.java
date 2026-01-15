@@ -39,12 +39,11 @@ public class InventoryInputController {
             @RequestParam(defaultValue = "50") int limit,
             @RequestBody SearchInventoryInputRequest request
     ) {
-
         PageResponse<InventoryInputDTO> response = inventoryInputService.searchInventoryInputs(request, page, limit);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/inventory-input/inventory-input-plan/{id}")
+        @GetMapping("/inventory-input/inventory-input-plan/{id}")
     public ResponseEntity<InventoryInputPlanDTO> getInventoryInputPlanById(@PathVariable Long id) {
         InventoryInputPlanDTO response = inventoryInputService.getInventoryInputPlanById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);

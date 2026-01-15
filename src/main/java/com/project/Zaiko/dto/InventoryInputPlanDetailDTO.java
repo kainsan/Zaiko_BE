@@ -35,6 +35,7 @@ public class InventoryInputPlanDetailDTO {
     private String packCsUnitName;
     private String packBlUnitName;
     private String pieceUnitName;
+    private String standardInfo;
     private String datetimeMngType;
     private String isDatetimeMng;
     private String isNumberMng;
@@ -42,4 +43,5 @@ public class InventoryInputPlanDetailDTO {
     private String isPackCsInput;
     private String isPackBlInput;
     private String isPieceInput;
+    private Long totalActualQuantity;
 }

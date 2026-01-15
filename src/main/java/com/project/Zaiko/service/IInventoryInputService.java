@@ -70,7 +70,6 @@ public class IInventoryInputService implements InventoryInputService {
     @Override
     public InventoryInputPlanDTO getInventoryInputPlanById(Long id) {
         List<com.project.Zaiko.dto.InventoryInputPlanFlatDTO> flatList = inventoryInputRepository.getInventoryInputById(id);
-
         if (flatList.isEmpty()) {
             return null;
         }
@@ -145,13 +144,15 @@ public class IInventoryInputService implements InventoryInputService {
                         flat.getPackCsUnitName(),
                         flat.getPackBlUnitName(),
                         flat.getPieceUnitName(),
+                        flat.getStandardInfo(),
                         flat.getDatetimeMngType(),
                         flat.getIsDatetimeMng(),
                         flat.getIsNumberMng(),
                         flat.getTotalQuantityInput(),
                         flat.getIsPackCsInput(),
                         flat.getIsPackBlInput(),
-                        flat.getIsPieceInput()
+                        flat.getIsPieceInput(),
+                        flat.getTotalActualQuantity()
                 ))
                 .collect(java.util.stream.Collectors.toList());
 

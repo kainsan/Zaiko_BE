@@ -114,8 +114,10 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
     @Query("""
     select new com.project.Zaiko.dto.InventoryInputPlanFlatDTO(
         i, d1.destinationCode, d1.departmentName, s1.supplierCode, s1.supplierName, ce.customerCode, ce.customerName, r1.repositoryCode, r1.repositoryName,
-        ipe, p.productCode, p.name1, r2.repositoryCode ,r2.repositoryName, l.locationCode, u1.unitName, u2.unitName, u3.unitName, p.dateTimeMngType, p.isDateTimeMng, p.isNumberMng,
-        ipe.totalPlanQuantity, p.isPackCsInput, p.isPackBlInput, p.isPieceInput
+        ipe, p.productCode, p.name1, r2.repositoryCode ,r2.repositoryName, l.locationCode, u1.unitName, u2.unitName, u3.unitName, p.standardInfo, p.dateTimeMngType, p.isDateTimeMng, p.isNumberMng,
+        ipe.totalPlanQuantity, p.isPackCsInput, p.isPackBlInput, p.isPieceInput,
+        ipe.csPlanQuantity, ipe.blPlanQuantity, ipe.psPlanQuantity,
+        (select sum(iae.totalActualQuantity) from InventoryActualInputDetailEntity iae where iae.planDetailId = ipe.planDetailId and iae.delFlg = '0')
     )
     from InventoryInputEntity i
     left join InventoryPlanInputDetailEntity ipe on i.inventoryInputId = ipe.inventoryInputId
