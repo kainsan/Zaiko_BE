@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 public interface MasterProductRepostory extends JpaRepository<ProductEntity, Long> {
 
     @Query("""
-    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc, se)
+    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc, se, p.packCsAmount, p.packBlAmount)
     from ProductEntity p
     left join Category1Entity c1 on p.categoryCode1 = c1.categoryCode and p.companyId = c1.companyId
     left join Category2Entity c2 on p.categoryCode2 = c2.categoryCode and p.companyId = c2.companyId
@@ -66,7 +66,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     );
 
     @Query("""
-    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc, se)
+    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc, se, p.packCsAmount, p.packBlAmount)
         
     from ProductEntity p
     left join Category1Entity c1 on p.categoryCode1 = c1.categoryCode and p.companyId = c1.companyId
@@ -85,7 +85,7 @@ public interface MasterProductRepostory extends JpaRepository<ProductEntity, Lon
     Page<MasterProductDTO> getAllProduct(Pageable pageable);
 
     @Query("""
-    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc, se)
+    select new com.project.Zaiko.dto.MasterProductDTO(p, c1, c2, c3, c4, c5, re, le, uCs, uBl, uPc, se, p.packCsAmount, p.packBlAmount)
     from ProductEntity p
     left join Category1Entity c1 on p.categoryCode1 = c1.categoryCode and p.companyId = c1.companyId
     left join Category2Entity c2 on p.categoryCode2 = c2.categoryCode and p.companyId = c2.companyId

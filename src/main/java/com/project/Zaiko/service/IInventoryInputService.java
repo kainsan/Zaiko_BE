@@ -152,6 +152,9 @@ public class IInventoryInputService implements InventoryInputService {
                         flat.getIsPackCsInput(),
                         flat.getIsPackBlInput(),
                         flat.getIsPieceInput(),
+                        flat.getPackCsAmount(),
+                        flat.getPackBlAmount(),
+                        flat.getDelFlg(),
                         flat.getTotalActualQuantity()
                 ))
                 .collect(java.util.stream.Collectors.toList());

@@ -43,5 +43,8 @@ public class InventoryInputPlanDetailDTO {
     private String isPackCsInput;
     private String isPackBlInput;
     private String isPieceInput;
+    private Integer packCsAmount;
+    private Integer packBlAmount;
+    private String delFlg;
     private Long totalActualQuantity;
 }

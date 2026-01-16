@@ -117,6 +117,7 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
         ipe, p.productCode, p.name1, r2.repositoryCode ,r2.repositoryName, l.locationCode, u1.unitName, u2.unitName, u3.unitName, p.standardInfo, p.dateTimeMngType, p.isDateTimeMng, p.isNumberMng,
         ipe.totalPlanQuantity, p.isPackCsInput, p.isPackBlInput, p.isPieceInput,
         ipe.csPlanQuantity, ipe.blPlanQuantity, ipe.psPlanQuantity,
+        p.packCsAmount, p.packBlAmount, ipe.delFlg,
         (select sum(iae.totalActualQuantity) from InventoryActualInputDetailEntity iae where iae.planDetailId = ipe.planDetailId and iae.delFlg = '0')
     )
     from InventoryInputEntity i
@@ -125,7 +126,7 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
     left join SupplierEntity s1 on i.planSupplierId = s1.supplierId
     left join CustomerEntity ce on i.productOwnerId = ce.customerId
     left join RepositoryEntity r1 on i.planRepositoryId = r1.repositoryId and i.companyId = r1.companyId
-    left join ProductEntity p on ipe.productId = p.productId and p.isSet = '0'
+    join ProductEntity p on ipe.productId = p.productId and p.delFlg = '0'
     left join RepositoryEntity r2 on ipe.repositoryId = r2.repositoryId and ipe.companyId = r2.companyId
     left join LocationEntity l on ipe.locationId = l.locationId
     left join UnitNameEntity u1 on p.packCsUnitCode = u1.unitCode

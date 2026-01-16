@@ -41,5 +41,8 @@ public class InventoryInputPlanFlatDTO {
     private Integer csPlanQuantity;
     private Integer blPlanQuantity;
     private Integer psPlanQuantity;
+    private Integer packCsAmount;
+    private Integer packBlAmount;
+    private String delFlg;
     private Long totalActualQuantity;
 }

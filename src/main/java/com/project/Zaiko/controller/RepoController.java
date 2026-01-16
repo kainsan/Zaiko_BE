@@ -29,7 +29,7 @@ public class RepoController {
         List<RepositoryEntity> repositories = repoRepositoryService.findAll();
         return new ResponseEntity<>(repositories, HttpStatus.OK);
     }
-    @GetMapping("/repositories/{repositoryId}/locations")
+    @GetMapping("/locations/{repositoryId}")
     public ResponseEntity<List<LocationEntity>> getLocationsByRepositoryId(@PathVariable Long repositoryId){
         List<LocationEntity> locations = locationService.findByRepositoryId(repositoryId);
         return new ResponseEntity<>(locations, HttpStatus.OK);

@@ -21,4 +21,6 @@ public class MasterProductDTO {
     private UnitNameEntity packBlUnitName;
     private UnitNameEntity pieceUnitName;
     private SupplierEntity supplierEntity;
+    private Integer packCsAmount;
+    private Integer packBlAmount;
 }
