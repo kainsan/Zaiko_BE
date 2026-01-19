@@ -1,8 +1,6 @@
 package com.project.Zaiko.controller;
 
-import com.project.Zaiko.dto.InventoryInputDTO;
-import com.project.Zaiko.dto.InventoryInputPlanDTO;
-import com.project.Zaiko.dto.PageResponse;
+import com.project.Zaiko.dto.*;
 import com.project.Zaiko.service.InventoryInputService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.Zaiko.dto.SearchInventoryInputRequest;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -47,5 +44,25 @@ public class InventoryInputController {
     public ResponseEntity<InventoryInputPlanDTO> getInventoryInputPlanById(@PathVariable Long id) {
         InventoryInputPlanDTO response = inventoryInputService.getInventoryInputPlanById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/inventory-input/inventory-input-plan")
+    public ResponseEntity<Void> createInventoryInputPlan(@RequestBody InventoryInputPlanRequest request) {
+        System.out.println(request);
+        inventoryInputService.createInventoryInputPlan(request);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PutMapping("/inventory-input/inventory-input-plan/{id}")
+    public ResponseEntity<Void> updateInventoryInputPlan(@PathVariable Long id, @RequestBody InventoryInputPlanRequest request) {
+        System.out.println(request);
+        inventoryInputService.updateInventoryInputPlan(id, request);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/inventory-input/inventory-input-plan/{id}")
+    public ResponseEntity<Void> deleteInventoryInput(@PathVariable Long id) {
+        inventoryInputService.deleteInventoryInput(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

@@ -1,9 +1,10 @@
 package com.project.Zaiko.service;
 
-import com.project.Zaiko.dto.InventoryInputDTO;
-import com.project.Zaiko.dto.InventoryInputPlanDTO;
-import com.project.Zaiko.dto.PageResponse;
+import com.project.Zaiko.dto.*;
+import com.project.Zaiko.jpa.InventoryInputEntity;
+import com.project.Zaiko.jpa.InventoryPlanInputDetailEntity;
 import com.project.Zaiko.repository.InventoryInputRepository;
+import com.project.Zaiko.repository.InventoryPlanInputDetailRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -19,6 +24,9 @@ public class IInventoryInputService implements InventoryInputService {
 
     @Autowired
     private InventoryInputRepository inventoryInputRepository;
+
+    @Autowired
+    private InventoryPlanInputDetailRepository inventoryPlanInputDetailRepository;
 
     @Override
     public PageResponse<InventoryInputDTO> getInventoryInputs(int page, int limit) {
@@ -75,7 +83,7 @@ public class IInventoryInputService implements InventoryInputService {
         }
 
         // Take the first element for header information
-        com.project.Zaiko.dto.InventoryInputPlanFlatDTO first = flatList.get(0);
+        InventoryInputPlanFlatDTO first = flatList.get(0);
 
         InventoryInputPlanDTO result = new InventoryInputPlanDTO();
         
@@ -164,6 +172,98 @@ public class IInventoryInputService implements InventoryInputService {
         return result;
     }
 
+    @Override
+    public void createInventoryInputPlan(InventoryInputPlanRequest request) {
+        InventoryInputEntity entity = new InventoryInputEntity();
+        entity.setDelFlg("0");
+        saveInventoryInputPlan(entity, request);
+    }
+
+    @Override
+    public void updateInventoryInputPlan(Long id, InventoryInputPlanRequest request) {
+        InventoryInputEntity entity = inventoryInputRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Inventory Input not found with id: " + id));
+        saveInventoryInputPlan(entity, request);
+    }
+
+    private void saveInventoryInputPlan(InventoryInputEntity entity, InventoryInputPlanRequest request) {
+        // 1. Save Header
+        InventoryInputPlanHeaderDTO header = request.getHeader();
+        if (header != null) {
+            if(header.getCompanyId() == null){
+                header.setCompanyId(1);
+            }
+            entity.setCompanyId(header.getCompanyId());
+            entity.setInputPlanDate(convertInputPlanDate(header.getInputPlanDate()));
+            entity.setCreateSlipType(header.getCreateSlipType());
+            entity.setSlipNo(header.getSlipNo());
+            entity.setPlanSupplierSlipNo(header.getPlanSupplierSlipNo());
+            entity.setPlanSlipNote(header.getPlanSlipNote());
+            entity.setPlanSupplierDeliveryDestinationId(header.getPlanSupplierDeliveryDestinationId());
+            entity.setPlanSupplierId(header.getPlanSupplierId());
+            entity.setProductOwnerId(header.getProductOwnerId());
+            entity.setPlanRepositoryId(header.getPlanRepositoryId());
+            entity.setInputStatus(header.getInputStatus());
+            entity.setSumPlanQuantity(header.getSumPlanQuantity());
+            entity.setSumActualQuantity(header.getSumActualQuantity());
+            entity.setIsClosed(header.getIsClosed());
+            entity.setFreeItem1(header.getFreeItem1());
+            entity.setFreeItem2(header.getFreeItem2());
+            entity.setFreeItem3(header.getFreeItem3());
+            entity.setContactStatus(header.getContactStatus());
+            
+            inventoryInputRepository.save(entity);
+        }
+
+        // 2. Save Details
+        List<InventoryInputPlanDetailDTO> details = request.getDetails();
+        if (details != null) {
+            for (InventoryInputPlanDetailDTO detailDTO : details) {
+                InventoryPlanInputDetailEntity detailEntity;
+
+                if (detailDTO.getPlanDetailId() != null) {
+                    // Update existing
+                    detailEntity = inventoryPlanInputDetailRepository.findById(detailDTO.getPlanDetailId())
+                            .orElse(new InventoryPlanInputDetailEntity());
+                } else {
+                    // Create new
+                    detailEntity = new InventoryPlanInputDetailEntity();
+                    detailEntity.setInventoryInputId(entity.getInventoryInputId());
+                }
+
+                if (detailDTO.getCompanyId() == null) {
+                    detailDTO.setCompanyId(1);
+                }
+                detailEntity.setCompanyId(detailDTO.getCompanyId());
+                detailEntity.setProductId(detailDTO.getProductId());
+                detailEntity.setRepositoryId(detailDTO.getRepositoryId());
+                detailEntity.setLocationId(detailDTO.getLocationId());
+                detailEntity.setDatetimeMng(convertInputPlanDate(detailDTO.getDatetimeMng()));
+                detailEntity.setNumberMng(detailDTO.getNumberMng());
+                detailEntity.setCsPlanQuantity(detailDTO.getCsPlanQuantity());
+                detailEntity.setBlPlanQuantity(detailDTO.getBlPlanQuantity());
+                detailEntity.setPsPlanQuantity(detailDTO.getPsPlanQuantity());
+                detailEntity.setTotalPlanQuantity(detailDTO.getTotalPlanQuantity());
+                detailEntity.setInventoryProductType(detailDTO.getInventoryProductType());
+                detailEntity.setDetailNote(detailDTO.getDetailNote());
+                detailEntity.setFreeItem1(detailDTO.getFreeItem1());
+                detailEntity.setFreeItem2(detailDTO.getFreeItem2());
+                detailEntity.setFreeItem3(detailDTO.getFreeItem3());
+                
+                // Handle delFlg if present in DTO, otherwise default to "0"
+                if (detailDTO.getDelFlg() != null) {
+                    detailEntity.setDelFlg(detailDTO.getDelFlg());
+                } else {
+                     if (detailEntity.getDelFlg() == null) {
+                        detailEntity.setDelFlg("0");
+                     }
+                }
+                System.out.println(detailEntity.toString());
+                inventoryPlanInputDetailRepository.save(detailEntity);
+            }
+        }
+    }
+
     private PageResponse<InventoryInputDTO> mapToPageResponse(Page<InventoryInputDTO> resultPage) {
         PageResponse<InventoryInputDTO> response = new PageResponse<>();
         response.setContent(resultPage.getContent());
@@ -173,5 +273,34 @@ public class IInventoryInputService implements InventoryInputService {
         response.setTotalPages(resultPage.getTotalPages());
         response.setLast(resultPage.isLast());
         return response;
+    }
+
+    public String convertInputPlanDate(String isoUtc) {
+        if (isoUtc == null || isoUtc.isBlank()) {
+            return null;
+        }
+
+        LocalDate localDate = Instant.parse(isoUtc)
+                .atZone(ZoneId.of("Asia/Tokyo")) // hoặc systemDefault()
+                .toLocalDate();
+
+        return localDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+    }
+
+    @Override
+    public void deleteInventoryInput(Long id) {
+        // 1. Soft delete Header
+        InventoryInputEntity entity = inventoryInputRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Inventory Input not found with id: " + id));
+        entity.setDelFlg("1");
+        System.out.println(entity.getDelFlg());
+        inventoryInputRepository.save(entity);
+
+        // // 2. Soft delete Details
+        // List<InventoryPlanInputDetailEntity> details = inventoryPlanInputDetailRepository.findByInventoryInputId(id);
+        // for (InventoryPlanInputDetailEntity detail : details) {
+        //     detail.setDelFlg("1");
+        //     inventoryPlanInputDetailRepository.save(detail);
+        // }
     }
 }
