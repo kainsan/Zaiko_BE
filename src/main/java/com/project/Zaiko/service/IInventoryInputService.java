@@ -45,7 +45,7 @@ public class IInventoryInputService implements InventoryInputService {
         String inputPlanDateFrom = request.getInputPlanDateFrom() != null ? request.getInputPlanDateFrom().toString().replace("-", "/") : null;
         String inputPlanDateTo = request.getInputPlanDateTo() != null ? request.getInputPlanDateTo().toString().replace("-", "/") : null;
 
-        Page<InventoryInputDTO> resultPage = inventoryInputRepository.searchInventoryInputs(
+        Page<com.project.Zaiko.repository.InventoryInputSummary> resultPage = inventoryInputRepository.searchInventoryInputs(
                 request.getActualRepositoryId() != null && !request.getActualRepositoryId().isEmpty() ? Long.parseLong(request.getActualRepositoryId()) : null,
                 request.getPlanRepositoryId() != null && !request.getPlanRepositoryId().isEmpty() ? Long.parseLong(request.getPlanRepositoryId()) : null,
                 request.getCustomerCodeFrom(),
@@ -72,7 +72,53 @@ public class IInventoryInputService implements InventoryInputService {
                 pageable
         );
 
-        return mapToPageResponse(resultPage);
+        Page<InventoryInputDTO> dtoPage = resultPage.map(summary -> {
+            InventoryInputEntity entity = new InventoryInputEntity();
+            entity.setInventoryInputId(summary.getInventoryInputId());
+            entity.setActualRepositoryId(summary.getActualRepositoryId());
+            entity.setActualSlipNote(summary.getActualSlipNote());
+            entity.setActualSupplierDeliveryDestinationId(summary.getActualSupplierDeliveryDestinationId());
+            entity.setActualSupplierId(summary.getActualSupplierId());
+            entity.setActualSupplierSlipNo(summary.getActualSupplierSlipNo());
+            entity.setCompanyId(summary.getCompanyId());
+            entity.setContactStatus(summary.getContactStatus());
+            entity.setCreateBy(summary.getCreateBy());
+            entity.setCreateDate(summary.getCreateDate());
+            entity.setCreateSlipType(summary.getCreateSlipType());
+            entity.setDelFlg(summary.getDelFlg());
+            entity.setFreeItem1(summary.getFreeItem1());
+            entity.setFreeItem2(summary.getFreeItem2());
+            entity.setFreeItem3(summary.getFreeItem3());
+            entity.setInputActualDate(summary.getInputActualDate());
+            entity.setInputPlanDate(summary.getInputPlanDate());
+            entity.setInputStatus(summary.getInputStatus());
+            entity.setIsClosed(summary.getIsClosed());
+            entity.setPlanRepositoryId(summary.getPlanRepositoryId());
+            entity.setPlanSlipNote(summary.getPlanSlipNote());
+            entity.setPlanSupplierDeliveryDestinationId(summary.getPlanSupplierDeliveryDestinationId());
+            entity.setPlanSupplierId(summary.getPlanSupplierId());
+            entity.setPlanSupplierSlipNo(summary.getPlanSupplierSlipNo());
+            entity.setProductOwnerId(summary.getProductOwnerId());
+            entity.setSlipNo(summary.getSlipNo());
+            entity.setSumActualQuantity(summary.getSumActualQuantity());
+            entity.setSumPlanQuantity(summary.getSumPlanQuantity());
+            entity.setUpdateBy(summary.getUpdateBy());
+            entity.setUpdateDate(summary.getUpdateDate());
+
+            return new InventoryInputDTO(
+                entity,
+                summary.getSupplierCode(),
+                summary.getSupplierName(),
+                summary.getRepositoryCode(),
+                summary.getRepositoryName(),
+                summary.getDestinationCode(),
+                summary.getDepartmentName(),
+                summary.getCustomerCode(),
+                summary.getCustomerName()
+            );
+        });
+
+        return mapToPageResponse(dtoPage);
     }
 
     @Override
@@ -296,11 +342,95 @@ public class IInventoryInputService implements InventoryInputService {
         System.out.println(entity.getDelFlg());
         inventoryInputRepository.save(entity);
 
-        // // 2. Soft delete Details
-        // List<InventoryPlanInputDetailEntity> details = inventoryPlanInputDetailRepository.findByInventoryInputId(id);
-        // for (InventoryPlanInputDetailEntity detail : details) {
         //     detail.setDelFlg("1");
         //     inventoryPlanInputDetailRepository.save(detail);
         // }
+    }
+
+    @Override
+    public InventoryInputActualDTO getInventoryInputActualById(Long id) {
+        List<com.project.Zaiko.dto.InventoryInputActualFlatDTO> flatList = inventoryInputRepository.getInventoryInputActualById(id);
+        if (flatList.isEmpty()) {
+            return null;
+        }
+
+        // Take the first element for header information
+        InventoryInputActualFlatDTO first = flatList.get(0);
+
+        InventoryInputActualDTO result = new InventoryInputActualDTO();
+        
+        InventoryInputActualHeaderDTO headerDTO = new InventoryInputActualHeaderDTO(
+            first.getInventoryInputEntity().getInventoryInputId(),
+            first.getInventoryInputEntity().getCompanyId(),
+            first.getInventoryInputEntity().getInputActualDate(),
+            first.getInventoryInputEntity().getCreateSlipType(),
+            first.getInventoryInputEntity().getSlipNo(),
+            first.getInventoryInputEntity().getActualSupplierSlipNo(),
+            first.getInventoryInputEntity().getActualSlipNote(),
+            first.getInventoryInputEntity().getActualSupplierDeliveryDestinationId(),
+            first.getInventoryInputEntity().getActualSupplierId(),
+            first.getInventoryInputEntity().getProductOwnerId(),
+            first.getInventoryInputEntity().getActualRepositoryId(),
+            first.getInventoryInputEntity().getInputStatus(),
+            first.getInventoryInputEntity().getSumPlanQuantity(),
+            first.getInventoryInputEntity().getSumActualQuantity(),
+            first.getInventoryInputEntity().getIsClosed(),
+            first.getInventoryInputEntity().getFreeItem1(),
+            first.getInventoryInputEntity().getFreeItem2(),
+            first.getInventoryInputEntity().getFreeItem3(),
+            first.getInventoryInputEntity().getContactStatus(),
+            first.getDestinationCode(),
+            first.getDepartmentName(),
+            first.getSupplierCode(),
+            first.getSupplierName(),
+            first.getCustomerCode(),
+            first.getCustomerName(),
+            first.getRepositoryCode(),
+            first.getRepositoryName()
+        );
+        result.setInventoryInputActualHeader(headerDTO);
+
+        // Map details
+        List<InventoryInputActualDetailDTO> details = flatList.stream()
+                .map(flat -> new InventoryInputActualDetailDTO(
+                        flat.getDetailEntity().getDateTimeMng(),
+                        flat.getDetailEntity().getActualDetailId(),
+                        flat.getDetailEntity().getInventoryInputId(),
+                        flat.getDetailEntity().getCompanyId(),
+                        flat.getDetailEntity().getProductId(),
+                        flat.getDetailEntity().getRepositoryId(),
+                        flat.getDetailEntity().getLocationId(),
+                        flat.getDetailEntity().getNumberMng(),
+                        flat.getDetailEntity().getCsActualQuantity(),
+                        flat.getDetailEntity().getBlActualQuantity(),
+                        flat.getDetailEntity().getPsActualQuantity(),
+                        flat.getDetailEntity().getTotalActualQuantity(),
+                        flat.getDetailEntity().getInventoryProductType(),
+                        flat.getDetailEntity().getDetailNote(),
+                        flat.getProductCode(),
+                        flat.getProductName(),
+                        flat.getDetailRepositoryCode(),
+                        flat.getDetailRepositoryName(),
+                        flat.getLocationCode(),
+                        flat.getPackCsUnitName(),
+                        flat.getPackBlUnitName(),
+                        flat.getPieceUnitName(),
+                        flat.getDatetimeMngType(),
+                        flat.getIsDatetimeMng(),
+                        flat.getIsNumberMng(),
+                        flat.getIsPackCsInput(),
+                        flat.getIsPackBlInput(),
+                        flat.getIsPieceInput(),
+                        flat.getTotalQuantityInput(),
+                        flat.getStandardInfo(),
+                        flat.getPackCsAmount(),
+                        flat.getPackBlAmount(),
+                        flat.getDelFlg()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+
+        result.setInventoryInputActualDetails(details);
+
+        return result;
     }
 }
