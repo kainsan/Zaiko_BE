@@ -1,9 +1,12 @@
 package com.project.Zaiko.service;
 
 import com.project.Zaiko.dto.*;
+import com.project.Zaiko.jpa.InventoryActualInputDetailEntity;
 import com.project.Zaiko.jpa.InventoryInputEntity;
 import com.project.Zaiko.jpa.InventoryPlanInputDetailEntity;
+import com.project.Zaiko.repository.InventoryActualInputDetailRepository;
 import com.project.Zaiko.repository.InventoryInputRepository;
+import com.project.Zaiko.repository.InventoryInputSummary;
 import com.project.Zaiko.repository.InventoryPlanInputDetailRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,9 @@ public class IInventoryInputService implements InventoryInputService {
     @Autowired
     private InventoryPlanInputDetailRepository inventoryPlanInputDetailRepository;
 
+    @Autowired
+    private InventoryActualInputDetailRepository inventoryActualInputDetailRepository;
+
     @Override
     public PageResponse<InventoryInputDTO> getInventoryInputs(int page, int limit) {
         Pageable pageable = PageRequest.of(page, limit);
@@ -37,7 +43,7 @@ public class IInventoryInputService implements InventoryInputService {
     }
 
     @Override
-    public PageResponse<InventoryInputDTO> searchInventoryInputs(com.project.Zaiko.dto.SearchInventoryInputRequest request, int page, int limit) {
+    public PageResponse<InventoryInputDTO> searchInventoryInputs(SearchInventoryInputRequest request, int page, int limit) {
         Pageable pageable = PageRequest.of(page, limit);
 
         String inputActualDateFrom = request.getInputActualDateFrom() != null ? request.getInputActualDateFrom().toString().replace("-", "/") : null;
@@ -45,7 +51,7 @@ public class IInventoryInputService implements InventoryInputService {
         String inputPlanDateFrom = request.getInputPlanDateFrom() != null ? request.getInputPlanDateFrom().toString().replace("-", "/") : null;
         String inputPlanDateTo = request.getInputPlanDateTo() != null ? request.getInputPlanDateTo().toString().replace("-", "/") : null;
 
-        Page<com.project.Zaiko.repository.InventoryInputSummary> resultPage = inventoryInputRepository.searchInventoryInputs(
+        Page<InventoryInputSummary> resultPage = inventoryInputRepository.searchInventoryInputs(
                 request.getActualRepositoryId() != null && !request.getActualRepositoryId().isEmpty() ? Long.parseLong(request.getActualRepositoryId()) : null,
                 request.getPlanRepositoryId() != null && !request.getPlanRepositoryId().isEmpty() ? Long.parseLong(request.getPlanRepositoryId()) : null,
                 request.getCustomerCodeFrom(),
@@ -106,15 +112,15 @@ public class IInventoryInputService implements InventoryInputService {
             entity.setUpdateDate(summary.getUpdateDate());
 
             return new InventoryInputDTO(
-                entity,
-                summary.getSupplierCode(),
-                summary.getSupplierName(),
-                summary.getRepositoryCode(),
-                summary.getRepositoryName(),
-                summary.getDestinationCode(),
-                summary.getDepartmentName(),
-                summary.getCustomerCode(),
-                summary.getCustomerName()
+                    entity,
+                    summary.getSupplierCode(),
+                    summary.getSupplierName(),
+                    summary.getRepositoryCode(),
+                    summary.getRepositoryName(),
+                    summary.getDestinationCode(),
+                    summary.getDepartmentName(),
+                    summary.getCustomerCode(),
+                    summary.getCustomerName()
             );
         });
 
@@ -123,7 +129,7 @@ public class IInventoryInputService implements InventoryInputService {
 
     @Override
     public InventoryInputPlanDTO getInventoryInputPlanById(Long id) {
-        List<com.project.Zaiko.dto.InventoryInputPlanFlatDTO> flatList = inventoryInputRepository.getInventoryInputById(id);
+        List<InventoryInputPlanFlatDTO> flatList = inventoryInputRepository.getInventoryInputById(id);
         if (flatList.isEmpty()) {
             return null;
         }
@@ -132,47 +138,47 @@ public class IInventoryInputService implements InventoryInputService {
         InventoryInputPlanFlatDTO first = flatList.get(0);
 
         InventoryInputPlanDTO result = new InventoryInputPlanDTO();
-        
-        com.project.Zaiko.dto.InventoryInputPlanHeaderDTO headerDTO = new com.project.Zaiko.dto.InventoryInputPlanHeaderDTO(
-            first.getInventoryInputEntity().getInventoryInputId(),
-            first.getInventoryInputEntity().getCompanyId(),
-            first.getInventoryInputEntity().getInputPlanDate(),
-            first.getInventoryInputEntity().getInputActualDate(),
-            first.getInventoryInputEntity().getCreateSlipType(),
-            first.getInventoryInputEntity().getSlipNo(),
-            first.getInventoryInputEntity().getPlanSupplierSlipNo(),
-            first.getInventoryInputEntity().getActualSupplierSlipNo(),
-            first.getInventoryInputEntity().getPlanSlipNote(),
-            first.getInventoryInputEntity().getActualSlipNote(),
-            first.getInventoryInputEntity().getPlanSupplierDeliveryDestinationId(),
-            first.getInventoryInputEntity().getActualSupplierDeliveryDestinationId(),
-            first.getInventoryInputEntity().getPlanSupplierId(),
-            first.getInventoryInputEntity().getActualSupplierId(),
-            first.getInventoryInputEntity().getProductOwnerId(),
-            first.getInventoryInputEntity().getPlanRepositoryId(),
-            first.getInventoryInputEntity().getActualRepositoryId(),
-            first.getInventoryInputEntity().getInputStatus(),
-            first.getInventoryInputEntity().getSumPlanQuantity(),
-            first.getInventoryInputEntity().getSumActualQuantity(),
-            first.getInventoryInputEntity().getIsClosed(),
-            first.getInventoryInputEntity().getFreeItem1(),
-            first.getInventoryInputEntity().getFreeItem2(),
-            first.getInventoryInputEntity().getFreeItem3(),
-            first.getInventoryInputEntity().getContactStatus(),
-            first.getDestinationCode(),
-            first.getDepartmentName(),
-            first.getSupplierCode(),
-            first.getSupplierName(),
-            first.getCustomerCode(),
-            first.getCustomerName(),
-            first.getRepositoryCode(),
-            first.getRepositoryName()
+
+        InventoryInputPlanHeaderDTO headerDTO = new InventoryInputPlanHeaderDTO(
+                first.getInventoryInputEntity().getInventoryInputId(),
+                first.getInventoryInputEntity().getCompanyId(),
+                first.getInventoryInputEntity().getInputPlanDate(),
+                first.getInventoryInputEntity().getInputActualDate(),
+                first.getInventoryInputEntity().getCreateSlipType(),
+                first.getInventoryInputEntity().getSlipNo(),
+                first.getInventoryInputEntity().getPlanSupplierSlipNo(),
+                first.getInventoryInputEntity().getActualSupplierSlipNo(),
+                first.getInventoryInputEntity().getPlanSlipNote(),
+                first.getInventoryInputEntity().getActualSlipNote(),
+                first.getInventoryInputEntity().getPlanSupplierDeliveryDestinationId(),
+                first.getInventoryInputEntity().getActualSupplierDeliveryDestinationId(),
+                first.getInventoryInputEntity().getPlanSupplierId(),
+                first.getInventoryInputEntity().getActualSupplierId(),
+                first.getInventoryInputEntity().getProductOwnerId(),
+                first.getInventoryInputEntity().getPlanRepositoryId(),
+                first.getInventoryInputEntity().getActualRepositoryId(),
+                first.getInventoryInputEntity().getInputStatus(),
+                first.getInventoryInputEntity().getSumPlanQuantity(),
+                first.getInventoryInputEntity().getSumActualQuantity(),
+                first.getInventoryInputEntity().getIsClosed(),
+                first.getInventoryInputEntity().getFreeItem1(),
+                first.getInventoryInputEntity().getFreeItem2(),
+                first.getInventoryInputEntity().getFreeItem3(),
+                first.getInventoryInputEntity().getContactStatus(),
+                first.getDestinationCode(),
+                first.getDepartmentName(),
+                first.getSupplierCode(),
+                first.getSupplierName(),
+                first.getCustomerCode(),
+                first.getCustomerName(),
+                first.getRepositoryCode(),
+                first.getRepositoryName()
         );
         result.setInventoryInputPlanHeader(headerDTO);
 
         // Map details
-        List<com.project.Zaiko.dto.InventoryInputPlanDetailDTO> details = flatList.stream()
-                .map(flat -> new com.project.Zaiko.dto.InventoryInputPlanDetailDTO(
+        List<InventoryInputPlanDetailDTO> details = flatList.stream()
+                .map(flat -> new InventoryInputPlanDetailDTO(
                         flat.getDetailEntity().getPlanDetailId(),
                         flat.getDetailEntity().getInventoryInputId(),
                         flat.getDetailEntity().getCompanyId(),
@@ -236,7 +242,7 @@ public class IInventoryInputService implements InventoryInputService {
         // 1. Save Header
         InventoryInputPlanHeaderDTO header = request.getHeader();
         if (header != null) {
-            if(header.getCompanyId() == null){
+            if (header.getCompanyId() == null) {
                 header.setCompanyId(1);
             }
             entity.setCompanyId(header.getCompanyId());
@@ -257,7 +263,7 @@ public class IInventoryInputService implements InventoryInputService {
             entity.setFreeItem2(header.getFreeItem2());
             entity.setFreeItem3(header.getFreeItem3());
             entity.setContactStatus(header.getContactStatus());
-            
+
             inventoryInputRepository.save(entity);
         }
 
@@ -295,14 +301,14 @@ public class IInventoryInputService implements InventoryInputService {
                 detailEntity.setFreeItem1(detailDTO.getFreeItem1());
                 detailEntity.setFreeItem2(detailDTO.getFreeItem2());
                 detailEntity.setFreeItem3(detailDTO.getFreeItem3());
-                
+
                 // Handle delFlg if present in DTO, otherwise default to "0"
                 if (detailDTO.getDelFlg() != null) {
                     detailEntity.setDelFlg(detailDTO.getDelFlg());
                 } else {
-                     if (detailEntity.getDelFlg() == null) {
+                    if (detailEntity.getDelFlg() == null) {
                         detailEntity.setDelFlg("0");
-                     }
+                    }
                 }
                 System.out.println(detailEntity.toString());
                 inventoryPlanInputDetailRepository.save(detailEntity);
@@ -349,7 +355,7 @@ public class IInventoryInputService implements InventoryInputService {
 
     @Override
     public InventoryInputActualDTO getInventoryInputActualById(Long id) {
-        List<com.project.Zaiko.dto.InventoryInputActualFlatDTO> flatList = inventoryInputRepository.getInventoryInputActualById(id);
+        List<InventoryInputActualFlatDTO> flatList = inventoryInputRepository.getInventoryInputActualById(id);
         if (flatList.isEmpty()) {
             return null;
         }
@@ -358,35 +364,36 @@ public class IInventoryInputService implements InventoryInputService {
         InventoryInputActualFlatDTO first = flatList.get(0);
 
         InventoryInputActualDTO result = new InventoryInputActualDTO();
-        
+
         InventoryInputActualHeaderDTO headerDTO = new InventoryInputActualHeaderDTO(
-            first.getInventoryInputEntity().getInventoryInputId(),
-            first.getInventoryInputEntity().getCompanyId(),
-            first.getInventoryInputEntity().getInputActualDate(),
-            first.getInventoryInputEntity().getCreateSlipType(),
-            first.getInventoryInputEntity().getSlipNo(),
-            first.getInventoryInputEntity().getActualSupplierSlipNo(),
-            first.getInventoryInputEntity().getActualSlipNote(),
-            first.getInventoryInputEntity().getActualSupplierDeliveryDestinationId(),
-            first.getInventoryInputEntity().getActualSupplierId(),
-            first.getInventoryInputEntity().getProductOwnerId(),
-            first.getInventoryInputEntity().getActualRepositoryId(),
-            first.getInventoryInputEntity().getInputStatus(),
-            first.getInventoryInputEntity().getSumPlanQuantity(),
-            first.getInventoryInputEntity().getSumActualQuantity(),
-            first.getInventoryInputEntity().getIsClosed(),
-            first.getInventoryInputEntity().getFreeItem1(),
-            first.getInventoryInputEntity().getFreeItem2(),
-            first.getInventoryInputEntity().getFreeItem3(),
-            first.getInventoryInputEntity().getContactStatus(),
-            first.getDestinationCode(),
-            first.getDepartmentName(),
-            first.getSupplierCode(),
-            first.getSupplierName(),
-            first.getCustomerCode(),
-            first.getCustomerName(),
-            first.getRepositoryCode(),
-            first.getRepositoryName()
+                first.getInventoryInputEntity().getInventoryInputId(),
+                first.getInventoryInputEntity().getCompanyId(),
+                first.getInventoryInputEntity().getInputPlanDate(),
+                first.getInventoryInputEntity().getInputActualDate(),
+                first.getInventoryInputEntity().getCreateSlipType(),
+                first.getInventoryInputEntity().getSlipNo(),
+                first.getInventoryInputEntity().getActualSupplierSlipNo(),
+                first.getInventoryInputEntity().getActualSlipNote(),
+                first.getInventoryInputEntity().getActualSupplierDeliveryDestinationId(),
+                first.getInventoryInputEntity().getActualSupplierId(),
+                first.getInventoryInputEntity().getProductOwnerId(),
+                first.getInventoryInputEntity().getActualRepositoryId(),
+                first.getInventoryInputEntity().getInputStatus(),
+                first.getInventoryInputEntity().getSumPlanQuantity(),
+                first.getInventoryInputEntity().getSumActualQuantity(),
+                first.getInventoryInputEntity().getIsClosed(),
+                first.getInventoryInputEntity().getFreeItem1(),
+                first.getInventoryInputEntity().getFreeItem2(),
+                first.getInventoryInputEntity().getFreeItem3(),
+                first.getInventoryInputEntity().getContactStatus(),
+                first.getDestinationCode(),
+                first.getDepartmentName(),
+                first.getSupplierCode(),
+                first.getSupplierName(),
+                first.getCustomerCode(),
+                first.getCustomerName(),
+                first.getRepositoryCode(),
+                first.getRepositoryName()
         );
         result.setInventoryInputActualHeader(headerDTO);
 
@@ -432,5 +439,79 @@ public class IInventoryInputService implements InventoryInputService {
         result.setInventoryInputActualDetails(details);
 
         return result;
+    }
+
+    @Override
+    public void updateInventoryInputActual(Long id, InventoryInputActualRequest request) {
+        InventoryInputEntity entity = inventoryInputRepository.findById(id).orElseThrow(() -> new RuntimeException("Inventory Input not found with id: " + id));
+        saveInventoryInputActual(entity, request);
+    }
+
+    private void saveInventoryInputActual(InventoryInputEntity entity, InventoryInputActualRequest request) {
+        InventoryInputActualHeaderDTO header = request.getHeader();
+        if (header != null) {
+            if (header.getCompanyId() == null) {
+                header.setCompanyId(1);
+            }
+            entity.setCompanyId(header.getCompanyId());
+            entity.setInputActualDate(convertInputPlanDate(header.getInputActualDate()));
+            entity.setActualSupplierSlipNo(header.getActualSupplierSlipNo());
+            entity.setActualSlipNote(header.getActualSlipNote());
+            entity.setActualSupplierDeliveryDestinationId(header.getActualSupplierDeliveryDestinationId());
+            entity.setActualSupplierId(header.getActualSupplierId());
+            entity.setProductOwnerId(header.getProductOwnerId());
+            entity.setActualRepositoryId(header.getActualRepositoryId());
+            entity.setInputStatus(header.getInputStatus());
+            entity.setSumActualQuantity(header.getSumActualQuantity());
+            entity.setIsClosed(header.getIsClosed());
+            entity.setFreeItem1(header.getFreeItem1());
+            entity.setFreeItem2(header.getFreeItem2());
+            entity.setFreeItem3(header.getFreeItem3());
+            entity.setContactStatus(header.getContactStatus());
+
+            inventoryInputRepository.save(entity);
+        }
+
+        List<InventoryInputActualDetailDTO> details = request.getDetails();
+        if (details != null) {
+            for (InventoryInputActualDetailDTO detailDTO : details) {
+                InventoryActualInputDetailEntity detailEntity;
+
+                if (detailDTO.getActualDetailId() != null) {
+                    detailEntity = inventoryActualInputDetailRepository.findById(detailDTO.getActualDetailId())
+                            .orElse(new InventoryActualInputDetailEntity());
+                } else {
+                    detailEntity = new InventoryActualInputDetailEntity();
+                    detailEntity.setInventoryInputId(entity.getInventoryInputId());
+                }
+
+                if (detailDTO.getCompanyId() == null) {
+                    detailDTO.setCompanyId(1);
+                }
+                detailEntity.setCompanyId(detailDTO.getCompanyId());
+                detailEntity.setProductId(detailDTO.getProductId());
+                detailEntity.setRepositoryId(detailDTO.getRepositoryId());
+                detailEntity.setLocationId(detailDTO.getLocationId());
+                detailEntity.setDateTimeMng(convertInputPlanDate(detailDTO.getDatetimeMng()));
+                detailEntity.setNumberMng(detailDTO.getNumberMng());
+                detailEntity.setCsActualQuantity(detailDTO.getCsActualQuantity());
+                detailEntity.setBlActualQuantity(detailDTO.getBlActualQuantity());
+                detailEntity.setPsActualQuantity(detailDTO.getPsActualQuantity());
+                detailEntity.setTotalActualQuantity(detailDTO.getTotalActualQuantity());
+                detailEntity.setInventoryProductType(detailDTO.getInventoryProductType());
+                detailEntity.setDetailNote(detailDTO.getDetailNote());
+
+                if (detailDTO.getDelFlg() != null) {
+                    detailEntity.setDelFlg(detailDTO.getDelFlg());
+                } else {
+                    if (detailEntity.getDelFlg() == null) {
+                        detailEntity.setDelFlg("0");
+
+                        System.out.println(detailEntity.toString());
+                        inventoryActualInputDetailRepository.save(detailEntity);
+                    }
+                }
+            }
+        }
     }
 }

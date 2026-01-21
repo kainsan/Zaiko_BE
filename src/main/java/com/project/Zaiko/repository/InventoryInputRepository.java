@@ -285,7 +285,7 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
     left join UnitNameEntity u1 on p.packCsUnitCode = u1.unitCode
     left join UnitNameEntity u2 on p.packBlUnitCode = u2.unitCode
     left join UnitNameEntity u3 on p.pieceUnitCode = u3.unitCode
-    where i.inventoryInputId = :id and i.delFlg = '0'
+    where i.inventoryInputId = :id and i.delFlg = '0' and (iad.delFlg = '0')
     """)
     List<com.project.Zaiko.dto.InventoryInputActualFlatDTO> getInventoryInputActualById(Long id);
 }

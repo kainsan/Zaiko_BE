@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class InventoryInputActualHeaderDTO {
     private Long inventoryInputId;
     private Integer companyId;
+    private String inputPlanDate;
     private String inputActualDate;
     private String createSlipType;
     private String slipNo;

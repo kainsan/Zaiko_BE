@@ -66,6 +66,13 @@ public class InventoryInputController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PutMapping("/inventory-input/inventory-input-actual/{id}")
+    public ResponseEntity<Void> updateInventoryInputActual(@PathVariable Long id, @RequestBody InventoryInputActualRequest request) {
+        System.out.println(request);
+        inventoryInputService.updateInventoryInputActual(id, request);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @DeleteMapping("/inventory-input/inventory-input-plan/{id}")
     public ResponseEntity<Void> deleteInventoryInput(@PathVariable Long id) {
         inventoryInputService.deleteInventoryInput(id);
