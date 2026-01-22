@@ -228,7 +228,64 @@ public class IInventoryInputService implements InventoryInputService {
     public void createInventoryInputPlan(InventoryInputPlanRequest request) {
         InventoryInputEntity entity = new InventoryInputEntity();
         entity.setDelFlg("0");
+
+        InventoryInputPlanHeaderDTO header = request.getHeader();
+        if (header != null) {
+            if (header.getSlipNo() == null || header.getSlipNo().isBlank()) {
+                header.setSlipNo(generateSlipNo());
+            } else {
+                if (inventoryInputRepository.existsBySlipNo(header.getSlipNo())) {
+                    throw new RuntimeException("Slip number already exists: " + header.getSlipNo());
+                }
+            }
+        }
+
         saveInventoryInputPlan(entity, request);
+    }
+
+    @Override
+    public void createInventoryActualPlan(InventoryInputActualRequest request) {
+        InventoryInputEntity entity = new InventoryInputEntity();
+        entity.setDelFlg("0");
+
+        InventoryInputActualHeaderDTO header = request.getHeader();
+        if (header != null) {
+            if (header.getSlipNo() == null || header.getSlipNo().isBlank()) {
+                header.setSlipNo(generateSlipNo());
+            } else {
+                if (inventoryInputRepository.existsBySlipNo(header.getSlipNo())) {
+                    throw new RuntimeException("Slip number already exists: " + header.getSlipNo());
+                }
+            }
+        }
+
+        saveInventoryInputActual(entity, request);
+    }
+
+    private synchronized String generateSlipNo() {
+        String prefix = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+        String maxSlipNo = inventoryInputRepository.findMaxSlipNoByPrefix(prefix);
+
+        int nextSeq = 1;
+        if (maxSlipNo != null && maxSlipNo.length() >= 10) {
+            try {
+                String seqStr = maxSlipNo.substring(6);
+                nextSeq = Integer.parseInt(seqStr) + 1;
+            } catch (NumberFormatException e) {
+                // Fallback to 1 if parsing fails
+            }
+        }
+
+        String generatedSlipNo;
+        while (true) {
+            generatedSlipNo = String.format("%s%04d", prefix, nextSeq);
+            if (!inventoryInputRepository.existsBySlipNo(generatedSlipNo)) {
+                break;
+            }
+            nextSeq++;
+        }
+
+        return generatedSlipNo;
     }
 
     @Override
@@ -347,7 +404,6 @@ public class IInventoryInputService implements InventoryInputService {
         entity.setDelFlg("1");
         System.out.println(entity.getDelFlg());
         inventoryInputRepository.save(entity);
-
         //     detail.setDelFlg("1");
         //     inventoryPlanInputDetailRepository.save(detail);
         // }
@@ -455,6 +511,7 @@ public class IInventoryInputService implements InventoryInputService {
             }
             entity.setCompanyId(header.getCompanyId());
             entity.setInputActualDate(convertInputPlanDate(header.getInputActualDate()));
+            entity.setSlipNo(header.getSlipNo());
             entity.setActualSupplierSlipNo(header.getActualSupplierSlipNo());
             entity.setActualSlipNote(header.getActualSlipNote());
             entity.setActualSupplierDeliveryDestinationId(header.getActualSupplierDeliveryDestinationId());
@@ -506,11 +563,10 @@ public class IInventoryInputService implements InventoryInputService {
                 } else {
                     if (detailEntity.getDelFlg() == null) {
                         detailEntity.setDelFlg("0");
-
-                        System.out.println(detailEntity.toString());
-                        inventoryActualInputDetailRepository.save(detailEntity);
                     }
                 }
+                System.out.println(detailEntity.toString());
+                inventoryActualInputDetailRepository.save(detailEntity);
             }
         }
     }

@@ -13,4 +13,5 @@ public interface InventoryInputService {
     void deleteInventoryInput(Long id);
     InventoryInputActualDTO getInventoryInputActualById(Long id);
     void updateInventoryInputActual(Long id, InventoryInputActualRequest request);
+    void createInventoryActualPlan(InventoryInputActualRequest request);
 }

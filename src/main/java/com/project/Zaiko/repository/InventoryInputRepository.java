@@ -288,4 +288,9 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
     where i.inventoryInputId = :id and i.delFlg = '0' and (iad.delFlg = '0')
     """)
     List<com.project.Zaiko.dto.InventoryInputActualFlatDTO> getInventoryInputActualById(Long id);
+
+    @Query(value = "SELECT MAX(slip_no) FROM t_inventory_input WHERE slip_no LIKE CONCAT(:prefix, '%')", nativeQuery = true)
+    String findMaxSlipNoByPrefix(String prefix);
+
+    boolean existsBySlipNo(String slipNo);
 }

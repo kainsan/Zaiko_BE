@@ -59,6 +59,13 @@ public class InventoryInputController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @PostMapping("/inventory-input/inventory-input-actual")
+    public ResponseEntity<Void> createInventoryActualPlan(@RequestBody InventoryInputActualRequest request) {
+        System.out.println(request);
+        inventoryInputService.createInventoryActualPlan(request);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
     @PutMapping("/inventory-input/inventory-input-plan/{id}")
     public ResponseEntity<Void> updateInventoryInputPlan(@PathVariable Long id, @RequestBody InventoryInputPlanRequest request) {
         System.out.println(request);
