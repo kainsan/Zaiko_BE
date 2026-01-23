@@ -1,6 +1,5 @@
 package com.project.Zaiko.dto;
 
-import com.project.Zaiko.jpa.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,18 +7,24 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InventoryInputActualFlatDTO {
-    private InventoryInputEntity inventoryInputEntity;
-    private String destinationCode;
-    private String departmentName;
-    private String supplierCode;
-    private String supplierName;
-    private String customerCode;
-    private String customerName;
-    private String repositoryCode;
-    private String repositoryName;
-
-    private InventoryActualInputDetailEntity detailEntity;
+public class InventoryInputCorrectionDetailDTO {
+    private String datetimeMng;
+    private Long actualDetailId;
+    private Long inventoryInputId;
+    private Integer companyId;
+    private Long productId;
+    private Long repositoryId;
+    private Long locationId;
+    private String numberMng;
+    private Integer csActualQuantity;
+    private Integer blActualQuantity;
+    private Integer psActualQuantity;
+    private Long totalActualQuantity;
+    private String inventoryProductType;
+    private String detailNote;
+    private String inputActualDate;
+    private String correctionReason;
+    
     private String productCode;
     private String productName;
     private String detailRepositoryCode;
@@ -28,16 +33,15 @@ public class InventoryInputActualFlatDTO {
     private String packCsUnitName;
     private String packBlUnitName;
     private String pieceUnitName;
-    private String standardInfo;
     private String datetimeMngType;
     private String isDatetimeMng;
     private String isNumberMng;
-    private Long totalQuantityInput;
     private String isPackCsInput;
     private String isPackBlInput;
     private String isPieceInput;
+    private Long totalQuantityInput;
+    private String standardInfo;
     private Integer packCsAmount;
     private Integer packBlAmount;
     private String delFlg;
-    private String correctionReason;
 }

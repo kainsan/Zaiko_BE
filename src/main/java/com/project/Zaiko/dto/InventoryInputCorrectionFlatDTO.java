@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InventoryInputActualFlatDTO {
+public class InventoryInputCorrectionFlatDTO {
     private InventoryInputEntity inventoryInputEntity;
     private String destinationCode;
     private String departmentName;

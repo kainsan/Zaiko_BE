@@ -80,6 +80,19 @@ public class InventoryInputController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @GetMapping("/inventory-input/inventory-input-correction/{id}")
+    public ResponseEntity<InventoryInputCorrectionDTO> getInventoryInputCorrectionById(@PathVariable Long id) {
+        InventoryInputCorrectionDTO response = inventoryInputService.getInventoryInputCorrectionById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/inventory-input/inventory-input-correction/{id}")
+    public ResponseEntity<Void> updateInventoryInputCorrection(@PathVariable Long id, @RequestBody InventoryInputCorrectionDTO request) {
+        System.out.println(request);
+        inventoryInputService.updateInventoryInputCorrection(id, request);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @DeleteMapping("/inventory-input/inventory-input-plan/{id}")
     public ResponseEntity<Void> deleteInventoryInput(@PathVariable Long id) {
         inventoryInputService.deleteInventoryInput(id);

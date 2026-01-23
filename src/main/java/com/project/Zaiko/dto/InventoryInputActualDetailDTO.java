@@ -22,6 +22,7 @@ public class InventoryInputActualDetailDTO {
     private Long totalActualQuantity;
     private String inventoryProductType;
     private String detailNote;
+    private String inputActualDate;
     
     private String productCode;
     private String productName;

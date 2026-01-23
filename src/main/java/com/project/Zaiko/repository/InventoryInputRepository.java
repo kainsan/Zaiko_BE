@@ -1,5 +1,7 @@
 package com.project.Zaiko.repository;
 
+import com.project.Zaiko.dto.InventoryInputActualFlatDTO;
+import com.project.Zaiko.dto.InventoryInputCorrectionFlatDTO;
 import com.project.Zaiko.dto.InventoryInputDTO;
 import com.project.Zaiko.dto.InventoryInputPlanFlatDTO;
 import com.project.Zaiko.jpa.InventoryInputEntity;
@@ -78,7 +80,7 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
               AND (:productCodeTo   IS NULL OR p.product_code <= :productCodeTo)
               AND (:productName     IS NULL OR p.name1 LIKE CONCAT('%', :productName, '%'))
 
-            UNION
+            UNION ALL
 
             SELECT iad.inventory_input_id
             FROM t_inventory_actual_input_detail iad
@@ -270,7 +272,7 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
         i, d1.destinationCode, d1.departmentName, s1.supplierCode, s1.supplierName, ce.customerCode, ce.customerName, r1.repositoryCode, r1.repositoryName,
         iad, p.productCode, p.name1, r2.repositoryCode ,r2.repositoryName, l.locationCode, u1.unitName, u2.unitName, u3.unitName, p.standardInfo, p.dateTimeMngType, p.isDateTimeMng, p.isNumberMng,
         ipd.totalPlanQuantity, p.isPackCsInput, p.isPackBlInput, p.isPieceInput,
-        p.packCsAmount, p.packBlAmount, iad.delFlg
+        p.packCsAmount, p.packBlAmount, iad.delFlg, iad.correctionReason
     )
     from InventoryInputEntity i
     left join InventoryActualInputDetailEntity iad on i.inventoryInputId = iad.inventoryInputId
@@ -287,7 +289,31 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
     left join UnitNameEntity u3 on p.pieceUnitCode = u3.unitCode
     where i.inventoryInputId = :id and i.delFlg = '0' and (iad.delFlg = '0')
     """)
-    List<com.project.Zaiko.dto.InventoryInputActualFlatDTO> getInventoryInputActualById(Long id);
+    List<InventoryInputActualFlatDTO> getInventoryInputActualById(Long id);
+
+    @Query("""
+    select new com.project.Zaiko.dto.InventoryInputCorrectionFlatDTO(
+        i, d1.destinationCode, d1.departmentName, s1.supplierCode, s1.supplierName, ce.customerCode, ce.customerName, r1.repositoryCode, r1.repositoryName,
+        iad, p.productCode, p.name1, r2.repositoryCode ,r2.repositoryName, l.locationCode, u1.unitName, u2.unitName, u3.unitName, p.standardInfo, p.dateTimeMngType, p.isDateTimeMng, p.isNumberMng,
+        ipd.totalPlanQuantity, p.isPackCsInput, p.isPackBlInput, p.isPieceInput,
+        p.packCsAmount, p.packBlAmount, iad.delFlg, iad.correctionReason
+    )
+    from InventoryInputEntity i
+    left join InventoryActualInputDetailEntity iad on i.inventoryInputId = iad.inventoryInputId and iad.delFlg = '0'
+    left join InventoryPlanInputDetailEntity ipd on iad.planDetailId = ipd.planDetailId
+    left join SupplierDeliveryDestEntity d1 on i.actualSupplierDeliveryDestinationId = d1.deliveryDestinationId
+    left join SupplierEntity s1 on i.actualSupplierId = s1.supplierId
+    left join CustomerEntity ce on i.productOwnerId = ce.customerId
+    left join RepositoryEntity r1 on i.actualRepositoryId = r1.repositoryId and i.companyId = r1.companyId
+    left join ProductEntity p on iad.productId = p.productId and p.delFlg = '0'
+    left join RepositoryEntity r2 on iad.repositoryId = r2.repositoryId and iad.companyId = r2.companyId
+    left join LocationEntity l on iad.locationId = l.locationId
+    left join UnitNameEntity u1 on p.packCsUnitCode = u1.unitCode
+    left join UnitNameEntity u2 on p.packBlUnitCode = u2.unitCode
+    left join UnitNameEntity u3 on p.pieceUnitCode = u3.unitCode
+    where i.inventoryInputId = :id and i.delFlg = '0'
+    """)
+    List<InventoryInputCorrectionFlatDTO> getInventoryInputCorrectionById(Long id);
 
     @Query(value = "SELECT MAX(slip_no) FROM t_inventory_input WHERE slip_no LIKE CONCAT(:prefix, '%')", nativeQuery = true)
     String findMaxSlipNoByPrefix(String prefix);
