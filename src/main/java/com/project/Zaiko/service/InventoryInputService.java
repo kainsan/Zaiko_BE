@@ -16,4 +16,5 @@ public interface InventoryInputService {
     void createInventoryActualPlan(InventoryInputActualRequest request);
     InventoryInputCorrectionDTO getInventoryInputCorrectionById(Long id);
     void updateInventoryInputCorrection(Long id, InventoryInputCorrectionDTO request);
+    void updateInventoryInputStatus(Long id, String isClosed);
 }

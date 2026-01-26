@@ -23,6 +23,7 @@ public interface InventoryInputRepository extends JpaRepository<InventoryInputEn
     left join RepositoryEntity r1 on i.planRepositoryId = r1.repositoryId and i.companyId = r1.companyId
     left join SupplierDeliveryDestEntity d1 on i.planSupplierDeliveryDestinationId = d1.deliveryDestinationId
     left join CustomerEntity ce on i.productOwnerId = ce.customerId
+    where i.delFlg ="0"
     """)
     Page<InventoryInputDTO> getAllInventoryInputs(Pageable pageable);
 

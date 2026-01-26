@@ -757,4 +757,16 @@ public class IInventoryInputService implements InventoryInputService {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public void updateInventoryInputStatus(Long id, String isClosed) {
+        try {
+            InventoryInputEntity entity = inventoryInputRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Inventory Input not found with id: " + id));
+            entity.setIsClosed(isClosed);
+            inventoryInputRepository.save(entity);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
