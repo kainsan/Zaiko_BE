@@ -8,6 +8,10 @@ import com.project.Zaiko.repository.InventoryActualInputDetailRepository;
 import com.project.Zaiko.repository.InventoryInputRepository;
 import com.project.Zaiko.repository.InventoryInputSummary;
 import com.project.Zaiko.repository.InventoryPlanInputDetailRepository;
+import com.project.Zaiko.repository.ProductInventoryRepository;
+import com.project.Zaiko.repository.ProductInventoryChangeRepository;
+import com.project.Zaiko.jpa.ProductInventoryEntity;
+import com.project.Zaiko.jpa.ProductInventoryChangeEntity;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,7 +23,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -33,6 +38,12 @@ public class IInventoryInputService implements InventoryInputService {
 
     @Autowired
     private InventoryActualInputDetailRepository inventoryActualInputDetailRepository;
+
+    @Autowired
+    private ProductInventoryRepository productInventoryRepository;
+
+    @Autowired
+    private ProductInventoryChangeRepository productInventoryChangeRepository;
 
     @Override
     public PageResponse<InventoryInputDTO> getInventoryInputs(int page, int limit) {
@@ -702,33 +713,60 @@ public class IInventoryInputService implements InventoryInputService {
                     header.setCompanyId(1);
                 }
                 entity.setCompanyId(header.getCompanyId());
-                entity.setActualSupplierSlipNo(header.getActualSupplierSlipNo());
+//                entity.setActualSupplierSlipNo(header.getActualSupplierSlipNo());
                 entity.setActualSlipNote(header.getActualSlipNote());
-                entity.setActualSupplierDeliveryDestinationId(header.getActualSupplierDeliveryDestinationId());
+//                entity.setActualSupplierDeliveryDestinationId(header.getActualSupplierDeliveryDestinationId());
                 entity.setActualSupplierId(header.getActualSupplierId());
                 entity.setProductOwnerId(header.getProductOwnerId());
                 entity.setActualRepositoryId(header.getActualRepositoryId());
                 
                 inventoryInputRepository.save(entity);
+                System.out.println("Updated t_inventory_input: " + entity.getInventoryInputId());
             }
 
             List<InventoryInputCorrectionDetailDTO> details = request.getInventoryInputCorrectionDetails();
             if (details != null) {
-                for (InventoryInputCorrectionDetailDTO detailDTO : details) {
-                    InventoryActualInputDetailEntity detailEntity;
+                Map<Long, InventoryActualInputDetailEntity> existingDetailsMap = new HashMap<>();
+                List<InventoryActualInputDetailEntity> existingDetails = 
+                    inventoryActualInputDetailRepository.findByInventoryInputIdAndDelFlg(id, "0");
+                
+                for (InventoryActualInputDetailEntity existing : existingDetails) {
+                    existingDetailsMap.put(existing.getActualDetailId(), existing);
+                }
 
-                    if (detailDTO.getActualDetailId() != null) {
-                        detailEntity = inventoryActualInputDetailRepository.findById(detailDTO.getActualDetailId())
-                                .orElse(new InventoryActualInputDetailEntity());
+                Set<Long> processedDetailIds = new HashSet<>();
+
+                for (InventoryInputCorrectionDetailDTO detailDTO : details) {
+                    if ("1".equals(detailDTO.getDelFlg())) {
+                        if (detailDTO.getActualDetailId() != null) {
+                            processedDetailIds.add(detailDTO.getActualDetailId());
+                            handleDeleteDetail(detailDTO, entity, header);
+                        }
+                        continue;
+                    }
+
+                    InventoryActualInputDetailEntity detailEntity;
+                    boolean isNew = false;
+
+                    if (detailDTO.getActualDetailId() != null && existingDetailsMap.containsKey(detailDTO.getActualDetailId())) {
+                        detailEntity = existingDetailsMap.get(detailDTO.getActualDetailId());
+                        processedDetailIds.add(detailDTO.getActualDetailId());
+                        
+                        handleEditDetail(detailEntity, detailDTO, entity, header);
                     } else {
+                        isNew = true;
                         detailEntity = new InventoryActualInputDetailEntity();
                         detailEntity.setInventoryInputId(entity.getInventoryInputId());
+                        
+                        handleAddDetail(detailEntity, detailDTO, entity, header);
                     }
 
                     if (detailDTO.getCompanyId() == null) {
                         detailDTO.setCompanyId(1);
                     }
                     detailEntity.setCompanyId(detailDTO.getCompanyId());
+                    detailEntity.setProductOwnerId(header.getProductOwnerId());
+                    detailEntity.setSupplierId(header.getActualSupplierId());
                     detailEntity.setProductId(detailDTO.getProductId());
                     detailEntity.setRepositoryId(detailDTO.getRepositoryId());
                     detailEntity.setLocationId(detailDTO.getLocationId());
@@ -744,18 +782,283 @@ public class IInventoryInputService implements InventoryInputService {
                     detailEntity.setCorrectionReason(detailDTO.getCorrectionReason());
 
                     if (detailDTO.getDelFlg() != null) {
-                        detailEntity.setDelFlg(detailDTO.getDelFlg());
-                    } else {
-                        if (detailEntity.getDelFlg() == null) {
-                            detailEntity.setDelFlg("0");
-                        }
+                    detailEntity.setDelFlg(detailDTO.getDelFlg());
+                } else {
+                    if (detailEntity.getDelFlg() == null) {
+                        detailEntity.setDelFlg("0");
                     }
-                    inventoryActualInputDetailRepository.save(detailEntity);
+                }
+                InventoryActualInputDetailEntity savedDetail = inventoryActualInputDetailRepository.save(detailEntity);
+                System.out.println("Updated/Inserted t_inventory_actual_input_detail: " + savedDetail.getActualDetailId());
+            }
+
+                for (Map.Entry<Long, InventoryActualInputDetailEntity> entry : existingDetailsMap.entrySet()) {
+                    if (!processedDetailIds.contains(entry.getKey())) {
+                        InventoryActualInputDetailEntity deletedDetail = entry.getValue();
+                        InventoryInputCorrectionDetailDTO deleteDTO = new InventoryInputCorrectionDetailDTO();
+                        deleteDTO.setActualDetailId(deletedDetail.getActualDetailId());
+                        deleteDTO.setProductId(deletedDetail.getProductId());
+                        deleteDTO.setRepositoryId(deletedDetail.getRepositoryId());
+                        deleteDTO.setLocationId(deletedDetail.getLocationId());
+                        deleteDTO.setDatetimeMng(deletedDetail.getDateTimeMng());
+                        deleteDTO.setNumberMng(deletedDetail.getNumberMng());
+                        deleteDTO.setInventoryProductType(deletedDetail.getInventoryProductType());
+                        deleteDTO.setTotalActualQuantity(deletedDetail.getTotalActualQuantity());
+                        
+                        handleDeleteDetail(deleteDTO, entity, header);
+                    }
+                }
+
+                long remainingCount = inventoryActualInputDetailRepository.countByInventoryInputIdAndDelFlg(id, "0");
+                boolean hasPlan = inventoryPlanInputDetailRepository.existsByInventoryInputId(id);
+                
+                if (remainingCount == 0 && !hasPlan) {
+                    entity.setDelFlg("1");
+                    inventoryInputRepository.save(entity);
                 }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void handleAddDetail(InventoryActualInputDetailEntity detailEntity, 
+                                 InventoryInputCorrectionDetailDTO detailDTO,
+                                 InventoryInputEntity headerEntity,
+                                 InventoryInputCorrectionHeaderDTO header) {
+        ProductInventoryEntity inventory = findOrCreateProductInventory(
+            detailDTO.getCompanyId() != null ? detailDTO.getCompanyId() : 1,
+            header.getProductOwnerId(),
+            header.getActualSupplierId(),
+            detailDTO.getProductId(),
+            detailDTO.getRepositoryId(),
+            detailDTO.getLocationId(),
+            convertInputPlanDate(detailDTO.getDatetimeMng()),
+            detailDTO.getNumberMng(),
+            detailDTO.getInventoryProductType()
+        );
+
+        Long oldQuantity = inventory.getQuantity() != null ? inventory.getQuantity() : 0L;
+        Long newQuantity = oldQuantity + (detailDTO.getTotalActualQuantity() != null ? detailDTO.getTotalActualQuantity() : 0L);
+        inventory.setQuantity(newQuantity);
+        productInventoryRepository.save(inventory);
+        System.out.println("Updated t_product_inventory: " + inventory.getInventoryId());
+
+        createInventoryChangeRecord(
+            inventory,
+            detailDTO.getTotalActualQuantity() != null ? detailDTO.getTotalActualQuantity() : 0L,
+            newQuantity,
+            headerEntity,
+            null,
+            "CORRECTION_ADD"
+        );
+    }
+
+    private void handleEditDetail(InventoryActualInputDetailEntity oldDetail,
+                                  InventoryInputCorrectionDetailDTO newDetailDTO,
+                                  InventoryInputEntity headerEntity,
+                                  InventoryInputCorrectionHeaderDTO header) {
+        Long oldQuantity = oldDetail.getTotalActualQuantity() != null ? oldDetail.getTotalActualQuantity() : 0L;
+        Long newQuantity = newDetailDTO.getTotalActualQuantity() != null ? newDetailDTO.getTotalActualQuantity() : 0L;
+
+        boolean keyFieldsChanged = hasKeyFieldsChanged(oldDetail, newDetailDTO, header);
+
+        if (keyFieldsChanged) {
+            ProductInventoryEntity oldInventory = findOrCreateProductInventory(
+                oldDetail.getCompanyId(),
+                oldDetail.getProductOwnerId(),
+                oldDetail.getSupplierId(),
+                oldDetail.getProductId(),
+                oldDetail.getRepositoryId(),
+                oldDetail.getLocationId(),
+                oldDetail.getDateTimeMng(),
+                oldDetail.getNumberMng(),
+                oldDetail.getInventoryProductType()
+            );
+
+            Long oldTotalQty = oldInventory.getQuantity() != null ? oldInventory.getQuantity() : 0L;
+            Long newOldTotalQty = oldTotalQty - oldQuantity;
+            oldInventory.setQuantity(newOldTotalQty);
+            productInventoryRepository.save(oldInventory);
+            System.out.println("Updated t_product_inventory (Old): " + oldInventory.getInventoryId());
+
+            createInventoryChangeRecord(
+                oldInventory,
+                -oldQuantity,
+                newOldTotalQty,
+                headerEntity,
+                oldDetail,
+                "CORRECTION_KEY_CHANGE_OLD"
+            );
+
+            ProductInventoryEntity newInventory = findOrCreateProductInventory(
+                newDetailDTO.getCompanyId() != null ? newDetailDTO.getCompanyId() : 1,
+                header.getProductOwnerId(),
+                header.getActualSupplierId(),
+                newDetailDTO.getProductId(),
+                newDetailDTO.getRepositoryId(),
+                newDetailDTO.getLocationId(),
+                convertInputPlanDate(newDetailDTO.getDatetimeMng()),
+                newDetailDTO.getNumberMng(),
+                newDetailDTO.getInventoryProductType()
+            );
+
+            Long newTotalQty = newInventory.getQuantity() != null ? newInventory.getQuantity() : 0L;
+            Long newNewTotalQty = newTotalQty + newQuantity;
+            newInventory.setQuantity(newNewTotalQty);
+            productInventoryRepository.save(newInventory);
+            System.out.println("Updated t_product_inventory (New): " + newInventory.getInventoryId());
+
+            createInventoryChangeRecord(
+                newInventory,
+                newQuantity,
+                newNewTotalQty,
+                headerEntity,
+                oldDetail,
+                "CORRECTION_KEY_CHANGE_NEW"
+            );
+        } else if (!oldQuantity.equals(newQuantity)) {
+            ProductInventoryEntity inventory = findOrCreateProductInventory(
+                newDetailDTO.getCompanyId() != null ? newDetailDTO.getCompanyId() : 1,
+                header.getProductOwnerId(),
+                header.getActualSupplierId(),
+                newDetailDTO.getProductId(),
+                newDetailDTO.getRepositoryId(),
+                newDetailDTO.getLocationId(),
+                convertInputPlanDate(newDetailDTO.getDatetimeMng()),
+                newDetailDTO.getNumberMng(),
+                newDetailDTO.getInventoryProductType()
+            );
+
+            Long currentTotal = inventory.getQuantity() != null ? inventory.getQuantity() : 0L;
+            Long quantityDelta = newQuantity - oldQuantity;
+            Long newTotal = currentTotal + quantityDelta;
+            inventory.setQuantity(newTotal);
+            productInventoryRepository.save(inventory);
+            System.out.println("Updated t_product_inventory: " + inventory.getInventoryId());
+
+            createInventoryChangeRecord(
+                inventory,
+                quantityDelta,
+                newTotal,
+                headerEntity,
+                oldDetail,
+                "CORRECTION_QUANTITY_EDIT"
+            );
+        }
+    }
+
+    private void handleDeleteDetail(InventoryInputCorrectionDetailDTO detailDTO,
+                                    InventoryInputEntity headerEntity,
+                                    InventoryInputCorrectionHeaderDTO header) {
+        if (detailDTO.getActualDetailId() != null) {
+            InventoryActualInputDetailEntity detailEntity = inventoryActualInputDetailRepository
+                .findById(detailDTO.getActualDetailId()).orElse(null);
+            
+            if (detailEntity != null) {
+                detailEntity.setDelFlg("1");
+                inventoryActualInputDetailRepository.save(detailEntity);
+                System.out.println("Deleted (Soft) t_inventory_actual_input_detail: " + detailEntity.getActualDetailId());
+            }
+        }
+
+        ProductInventoryEntity inventory = findOrCreateProductInventory(
+            detailDTO.getCompanyId() != null ? detailDTO.getCompanyId() : 1,
+            header.getProductOwnerId(),
+            header.getActualSupplierId(),
+            detailDTO.getProductId(),
+            detailDTO.getRepositoryId(),
+            detailDTO.getLocationId(),
+            convertInputPlanDate(detailDTO.getDatetimeMng()),
+            detailDTO.getNumberMng(),
+            detailDTO.getInventoryProductType()
+        );
+
+        Long currentTotal = inventory.getQuantity() != null ? inventory.getQuantity() : 0L;
+        Long deleteQuantity = detailDTO.getTotalActualQuantity() != null ? detailDTO.getTotalActualQuantity() : 0L;
+        Long newTotal = currentTotal - deleteQuantity;
+        inventory.setQuantity(newTotal);
+        productInventoryRepository.save(inventory);
+        System.out.println("Updated t_product_inventory: " + inventory.getInventoryId());
+
+        createInventoryChangeRecord(
+            inventory,
+            -deleteQuantity,
+            newTotal,
+            headerEntity,
+            null,
+            "CORRECTION_DELETE"
+        );
+    }
+
+    private boolean hasKeyFieldsChanged(InventoryActualInputDetailEntity oldDetail,
+                                       InventoryInputCorrectionDetailDTO newDetail,
+                                       InventoryInputCorrectionHeaderDTO header) {
+        String oldDateMng = oldDetail.getDateTimeMng();
+        String newDateMng = convertInputPlanDate(newDetail.getDatetimeMng());
+        
+        boolean dateChanged = (oldDateMng == null && newDateMng != null) ||
+                             (oldDateMng != null && !oldDateMng.equals(newDateMng));
+        
+        boolean locationChanged = !Objects.equals(oldDetail.getLocationId(), newDetail.getLocationId());
+        boolean inventoryTypeChanged = !Objects.equals(oldDetail.getInventoryProductType(), newDetail.getInventoryProductType());
+        
+        return dateChanged || locationChanged || inventoryTypeChanged;
+    }
+
+    private ProductInventoryEntity findOrCreateProductInventory(Integer companyId, Long productOwnerId,
+                                                                Long supplierId, Long productId, Long repositoryId,
+                                                                Long locationId, String dateTimeMng, String numberMng,
+                                                                String inventoryProductType) {
+        Optional<ProductInventoryEntity> existing = productInventoryRepository.findByNineKeys(
+            companyId, productOwnerId, supplierId, productId, repositoryId, 
+            locationId, dateTimeMng, numberMng, inventoryProductType
+        );
+
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        ProductInventoryEntity newInventory = new ProductInventoryEntity();
+        newInventory.setCompanyId(companyId);
+        newInventory.setProductOwnerId(productOwnerId);
+        newInventory.setSupplierId(supplierId);
+        newInventory.setProductId(productId);
+        newInventory.setRepositoryId(repositoryId);
+        newInventory.setLocationId(locationId);
+        newInventory.setDateTimeMng(dateTimeMng);
+        newInventory.setNumberMng(numberMng);
+        newInventory.setInventoryProductType(inventoryProductType);
+        newInventory.setQuantity(0L);
+        newInventory.setDelFlg("0");
+        
+        return productInventoryRepository.save(newInventory);
+    }
+
+    private void createInventoryChangeRecord(ProductInventoryEntity inventory, Long changeQuantity,
+                                            Long currentQuantity, InventoryInputEntity headerEntity,
+                                            InventoryActualInputDetailEntity detailEntity, String changeType) {
+        ProductInventoryChangeEntity change = new ProductInventoryChangeEntity();
+        change.setCompanyId(inventory.getCompanyId());
+        change.setProductOwnerId(inventory.getProductOwnerId());
+        change.setSupplierId(inventory.getSupplierId());
+        change.setProductId(inventory.getProductId());
+        change.setRepositoryId(inventory.getRepositoryId());
+        change.setLocationId(inventory.getLocationId());
+        change.setDateTimeMng(inventory.getDateTimeMng());
+        change.setNumberMng(inventory.getNumberMng());
+        change.setInventoryProductType(inventory.getInventoryProductType());
+        change.setInventoryQuantity(currentQuantity);
+        change.setChangeQuantity(changeQuantity);
+        change.setChangeDate(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")));
+        change.setChangeType(changeType);
+        change.setHeaderId(headerEntity.getInventoryInputId());
+        change.setDetailId(detailEntity != null ? detailEntity.getActualDetailId() : null);
+        change.setSlipNo(headerEntity.getSlipNo());
+        change.setDelFlg("0");
+        
+        ProductInventoryChangeEntity savedChange = productInventoryChangeRepository.save(change);
+        System.out.println("Inserted t_product_inventory_change: " + savedChange.getInventoryChangeId());
     }
 
     @Override

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface InventoryPlanInputDetailRepository extends JpaRepository<InventoryPlanInputDetailEntity, Long> {
     List<InventoryPlanInputDetailEntity> findByInventoryInputId(Long inventoryInputId);
+    List<InventoryPlanInputDetailEntity> findByInventoryInputIdAndDelFlg(Long inventoryInputId, String delFlg);
+    boolean existsByInventoryInputId(Long inventoryInputId);
 }
