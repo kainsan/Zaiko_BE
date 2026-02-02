@@ -271,7 +271,7 @@ public class IInventoryInputService implements InventoryInputService {
     }
 
     @Override
-    public void createInventoryActualPlan(InventoryInputActualRequest request) {
+    public Long createInventoryActualPlan(InventoryInputActualRequest request) {
         try {
             InventoryInputEntity entity = new InventoryInputEntity();
             entity.setDelFlg("0");
@@ -288,6 +288,9 @@ public class IInventoryInputService implements InventoryInputService {
             }
 
             saveInventoryInputActual(entity, request);
+            
+            // Return the newly created inventoryInputId
+            return entity.getInventoryInputId();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -553,6 +556,8 @@ public class IInventoryInputService implements InventoryInputService {
 
     private void saveInventoryInputActual(InventoryInputEntity entity, InventoryInputActualRequest request) {
         InventoryInputActualHeaderDTO header = request.getHeader();
+        
+        // STEP 1: Save/Update Header - t_inventory_input
         if (header != null) {
             if (header.getCompanyId() == null) {
                 header.setCompanyId(1);
@@ -567,6 +572,7 @@ public class IInventoryInputService implements InventoryInputService {
             entity.setProductOwnerId(header.getProductOwnerId());
             entity.setActualRepositoryId(header.getActualRepositoryId());
             entity.setInputStatus(header.getInputStatus());
+            entity.setSumPlanQuantity(header.getSumPlanQuantity());
             entity.setSumActualQuantity(header.getSumActualQuantity());
             entity.setIsClosed(header.getIsClosed());
             entity.setFreeItem1(header.getFreeItem1());
@@ -575,25 +581,40 @@ public class IInventoryInputService implements InventoryInputService {
             entity.setContactStatus(header.getContactStatus());
 
             inventoryInputRepository.save(entity);
+            System.out.println("Saved t_inventory_input: " + entity.getInventoryInputId());
         }
 
+        // STEP 2-4: Process Details - t_inventory_actual_input_detail, t_product_inventory, t_product_inventory_change
         List<InventoryInputActualDetailDTO> details = request.getDetails();
-        if (details != null) {
+        if (details != null && header != null) {
             for (InventoryInputActualDetailDTO detailDTO : details) {
-                InventoryActualInputDetailEntity detailEntity;
-
-                if (detailDTO.getActualDetailId() != null) {
-                    detailEntity = inventoryActualInputDetailRepository.findById(detailDTO.getActualDetailId())
-                            .orElse(new InventoryActualInputDetailEntity());
-                } else {
-                    detailEntity = new InventoryActualInputDetailEntity();
-                    detailEntity.setInventoryInputId(entity.getInventoryInputId());
+                // Skip deleted items
+                if ("1".equals(detailDTO.getDelFlg())) {
+                    continue;
                 }
 
+                boolean isNewDetail = (detailDTO.getActualDetailId() == null);
+                InventoryActualInputDetailEntity detailEntity;
+                Long oldQuantity = 0L;
+
+                if (isNewDetail) {
+                    // CREATE new detail
+                    detailEntity = new InventoryActualInputDetailEntity();
+                    detailEntity.setInventoryInputId(entity.getInventoryInputId());
+                } else {
+                    // UPDATE existing detail - get old quantity for inventory calculation
+                    detailEntity = inventoryActualInputDetailRepository.findById(detailDTO.getActualDetailId())
+                            .orElse(new InventoryActualInputDetailEntity());
+                    oldQuantity = detailEntity.getTotalActualQuantity() != null ? detailEntity.getTotalActualQuantity() : 0L;
+                }
+
+                // Set detail fields (9 keys + other fields)
                 if (detailDTO.getCompanyId() == null) {
                     detailDTO.setCompanyId(1);
                 }
                 detailEntity.setCompanyId(detailDTO.getCompanyId());
+                detailEntity.setProductOwnerId(header.getProductOwnerId());  // Required for 9-key
+                detailEntity.setSupplierId(header.getActualSupplierId());    // Required for 9-key
                 detailEntity.setProductId(detailDTO.getProductId());
                 detailEntity.setRepositoryId(detailDTO.getRepositoryId());
                 detailEntity.setLocationId(detailDTO.getLocationId());
@@ -613,9 +634,70 @@ public class IInventoryInputService implements InventoryInputService {
                         detailEntity.setDelFlg("0");
                     }
                 }
-                System.out.println(detailEntity.toString());
-                inventoryActualInputDetailRepository.save(detailEntity);
+
+                // STEP 2: Save detail to t_inventory_actual_input_detail
+                InventoryActualInputDetailEntity savedDetail = inventoryActualInputDetailRepository.save(detailEntity);
+                System.out.println("Saved t_inventory_actual_input_detail: " + savedDetail.getActualDetailId());
+
+                // STEP 3 & 4: Update t_product_inventory and t_product_inventory_change
+                Long newQuantity = detailDTO.getTotalActualQuantity() != null ? detailDTO.getTotalActualQuantity() : 0L;
+                
+                // Find or create product inventory using 9 keys
+                ProductInventoryEntity inventory = findOrCreateProductInventory(
+                    detailDTO.getCompanyId(),
+                    header.getProductOwnerId(),
+                    header.getActualSupplierId(),
+                    detailDTO.getProductId(),
+                    detailDTO.getRepositoryId(),
+                    detailDTO.getLocationId(),
+                    convertInputPlanDate(detailDTO.getDatetimeMng()),
+                    detailDTO.getNumberMng(),
+                    detailDTO.getInventoryProductType()
+                );
+
+                // Calculate quantity change
+                Long currentInventoryQty = inventory.getQuantity() != null ? inventory.getQuantity() : 0L;
+                Long quantityDelta;
+                String changeType;
+
+                if (isNewDetail) {
+                    // New detail: add the new quantity
+                    quantityDelta = newQuantity;
+                    changeType = "ACTUAL_INPUT_ADD";
+                } else {
+                    // Update detail: adjust by the difference
+                    quantityDelta = newQuantity - oldQuantity;
+                    changeType = "ACTUAL_INPUT_UPDATE";
+                }
+
+                // Update inventory quantity
+                Long updatedInventoryQty = currentInventoryQty + quantityDelta;
+                inventory.setQuantity(updatedInventoryQty);
+                productInventoryRepository.save(inventory);
+                System.out.println("Updated t_product_inventory: " + inventory.getInventoryId() + ", quantity: " + updatedInventoryQty);
+
+                // Create inventory change record (history tracking)
+                if (quantityDelta != 0) {
+                    createInventoryChangeRecord(
+                        inventory,
+                        quantityDelta,
+                        updatedInventoryQty,
+                        entity,
+                        savedDetail,
+                        changeType
+                    );
+                }
             }
+        }
+        
+        // STEP 5: Auto-close slip if total actual quantity exceeds total plan quantity
+        Long sumActualQuantity = entity.getSumActualQuantity() != null ? entity.getSumActualQuantity() : 0L;
+        Long sumPlanQuantity = entity.getSumPlanQuantity() != null ? entity.getSumPlanQuantity() : 0L;
+        
+        if (sumActualQuantity > sumPlanQuantity) {
+            entity.setIsClosed("1");
+            inventoryInputRepository.save(entity);
+            System.out.println("Auto-closed slip: actual quantity (" + sumActualQuantity + ") exceeds plan quantity (" + sumPlanQuantity + ")");
         }
     }
 
@@ -649,7 +731,8 @@ public class IInventoryInputService implements InventoryInputService {
                     first.getInventoryInputEntity().getActualRepositoryId(),
                     first.getRepositoryCode(),
                     first.getRepositoryName(),
-                    first.getInventoryInputEntity().getActualSlipNote()
+                    first.getInventoryInputEntity().getActualSlipNote(),
+                    first.getInventoryInputEntity().getIsClosed()
             );
             result.setInventoryInputCorrectionHeader(headerDTO);
 

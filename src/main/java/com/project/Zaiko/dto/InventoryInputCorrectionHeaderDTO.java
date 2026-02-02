@@ -27,4 +27,5 @@ public class InventoryInputCorrectionHeaderDTO {
     private String repositoryCode;
     private String repositoryName;
     private String actualSlipNote;
+    private String isClosed;
 }

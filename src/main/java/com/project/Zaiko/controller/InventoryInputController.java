@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.bind.annotation.*;
 
-
-
+import java.util.HashMap;
+import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class InventoryInputController {
@@ -60,10 +60,12 @@ public class InventoryInputController {
     }
 
     @PostMapping("/inventory-input/inventory-input-actual")
-    public ResponseEntity<Void> createInventoryActualPlan(@RequestBody InventoryInputActualRequest request) {
+    public ResponseEntity<Map<String, Long>> createInventoryActualPlan(@RequestBody InventoryInputActualRequest request) {
         System.out.println(request);
-        inventoryInputService.createInventoryActualPlan(request);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        Long inventoryInputId = inventoryInputService.createInventoryActualPlan(request);
+        Map<String, Long> response = new HashMap<>();
+        response.put("inventoryInputId", inventoryInputId);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/inventory-input/inventory-input-plan/{id}")
