@@ -121,8 +121,32 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
         AND (:planOutputDeliveryDateFrom IS NULL OR o.plan_deliver_date >= :planOutputDeliveryDateFrom)
         AND (:planOutputDeliveryDateTo IS NULL OR o.plan_deliver_date <= :planOutputDeliveryDateTo)
 
-        AND (:supplierSlipNoFrom IS NULL OR o.plan_supplier_slip_no >= :supplierSlipNoFrom)
-        AND (:supplierSlipNoTo IS NULL OR o.plan_supplier_slip_no <= :supplierSlipNoTo)
+        AND (
+            (:supplierSlipNoFrom IS NULL AND :supplierSlipNoTo IS NULL)
+            OR (
+                :supplierSlipNoFrom IS NOT NULL AND :supplierSlipNoTo IS NULL
+                AND (
+                    o.plan_supplier_slip_no >= :supplierSlipNoFrom 
+                    OR o.actual_supplier_slip_no >= :supplierSlipNoFrom
+                )
+            )
+            OR (
+                :supplierSlipNoFrom IS NULL AND :supplierSlipNoTo IS NOT NULL
+                AND (
+                    o.plan_supplier_slip_no <= :supplierSlipNoTo 
+                    OR o.actual_supplier_slip_no <= :supplierSlipNoTo
+                )
+            )
+            OR (
+                :supplierSlipNoFrom IS NOT NULL AND :supplierSlipNoTo IS NOT NULL
+                AND (
+                    (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
+                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
+                    OR (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
+                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
+                )
+            )
+        )
 
         AND (:slipNoFrom IS NULL OR o.slip_no >= :slipNoFrom)
         AND (:slipNoTo IS NULL OR o.slip_no <= :slipNoTo)
@@ -149,7 +173,8 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
                 FROM t_inventory_plan_output_detail opd
                 JOIN m_product p ON p.product_id = opd.product_id
                 WHERE opd.inventory_output_id = o.inventory_output_id
-                  AND p.product_code >= :productIdFrom
+                AND p.product_code >= :productIdFrom
+                AND opd.del_flg = '0'
             )
         )
         AND (
@@ -158,7 +183,8 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
                 FROM t_inventory_plan_output_detail opd
                 JOIN m_product p ON p.product_id = opd.product_id
                 WHERE opd.inventory_output_id = o.inventory_output_id
-                  AND p.product_code <= :productIdTo
+                AND p.product_code <= :productIdTo
+                AND opd.del_flg = '0'
             )
         )
         AND (
@@ -167,7 +193,8 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
                 FROM t_inventory_plan_output_detail opd
                 JOIN m_product p ON p.product_id = opd.product_id
                 WHERE opd.inventory_output_id = o.inventory_output_id
-                  AND p.name1 LIKE CONCAT('%', :productName, '%')
+                AND p.name1 LIKE CONCAT('%', :productName, '%')
+                AND opd.del_flg = '0'
             )
         )
 
@@ -265,8 +292,32 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
         AND (:planOutputDeliveryDateFrom IS NULL OR o.plan_deliver_date >= :planOutputDeliveryDateFrom)
         AND (:planOutputDeliveryDateTo IS NULL OR o.plan_deliver_date <= :planOutputDeliveryDateTo)
 
-        AND (:supplierSlipNoFrom IS NULL OR o.plan_supplier_slip_no >= :supplierSlipNoFrom)
-        AND (:supplierSlipNoTo IS NULL OR o.plan_supplier_slip_no <= :supplierSlipNoTo)
+        AND (
+            (:supplierSlipNoFrom IS NULL AND :supplierSlipNoTo IS NULL)
+            OR (
+                :supplierSlipNoFrom IS NOT NULL AND :supplierSlipNoTo IS NULL
+                AND (
+                    o.plan_supplier_slip_no >= :supplierSlipNoFrom 
+                    OR o.actual_supplier_slip_no >= :supplierSlipNoFrom
+                )
+            )
+            OR (
+                :supplierSlipNoFrom IS NULL AND :supplierSlipNoTo IS NOT NULL
+                AND (
+                    o.plan_supplier_slip_no <= :supplierSlipNoTo 
+                    OR o.actual_supplier_slip_no <= :supplierSlipNoTo
+                )
+            )
+            OR (
+                :supplierSlipNoFrom IS NOT NULL AND :supplierSlipNoTo IS NOT NULL
+                AND (
+                    (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
+                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
+                    OR (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
+                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
+                )
+            )
+        )
 
         AND (:slipNoFrom IS NULL OR o.slip_no >= :slipNoFrom)
         AND (:slipNoTo IS NULL OR o.slip_no <= :slipNoTo)
@@ -293,7 +344,8 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
                 FROM t_inventory_plan_output_detail opd
                 JOIN m_product p ON p.product_id = opd.product_id
                 WHERE opd.inventory_output_id = o.inventory_output_id
-                  AND p.product_code >= :productIdFrom
+                AND p.product_code >= :productIdFrom
+                AND opd.del_flg = '0'
             )
         )
         AND (
@@ -302,7 +354,8 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
                 FROM t_inventory_plan_output_detail opd
                 JOIN m_product p ON p.product_id = opd.product_id
                 WHERE opd.inventory_output_id = o.inventory_output_id
-                  AND p.product_code <= :productIdTo
+                AND p.product_code <= :productIdTo
+                AND opd.del_flg = '0'
             )
         )
         AND (
