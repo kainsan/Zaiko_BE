@@ -1,6 +1,7 @@
 package com.project.Zaiko.controller;
 
 import com.project.Zaiko.dto.InventoryOutputDTO;
+import com.project.Zaiko.dto.InventoryOutputPlanDTO;
 import com.project.Zaiko.dto.InventoryOutputSearchParams;
 import com.project.Zaiko.dto.PageResponse;
 import com.project.Zaiko.service.IInventoryOutputService;
@@ -27,4 +28,11 @@ public class InventoryOutputController {
         PageResponse<InventoryOutputDTO> response = inventoryOutputService.searchInventoryOutputs(request, pageable);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @GetMapping("/inventory-output/inventory-output-plan/{id}")
+    public ResponseEntity<InventoryOutputPlanDTO> getInventoryOutputPlanById(@PathVariable Long id) {
+        InventoryOutputPlanDTO response = inventoryOutputService.getInventoryOutputPlanById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
+

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "m_course")
+@IdClass(CourseId.class)
 @NamedQuery(name = "CourseEntity.findAll", query = "SELECT m FROM CourseEntity m")
 public class CourseEntity extends CommonEntity  implements Serializable {
 	/**

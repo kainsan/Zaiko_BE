@@ -1,5 +1,6 @@
 package com.project.Zaiko.repository;
 
+import com.project.Zaiko.dto.InventoryOutputPlanFlatDTO;
 import com.project.Zaiko.jpa.InventoryOutputEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -7,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface InventoryOutputRepository extends JpaRepository<InventoryOutputEntity, Long> {
@@ -135,15 +138,6 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
                 AND (
                     o.plan_supplier_slip_no <= :supplierSlipNoTo 
                     OR o.actual_supplier_slip_no <= :supplierSlipNoTo
-                )
-            )
-            OR (
-                :supplierSlipNoFrom IS NOT NULL AND :supplierSlipNoTo IS NOT NULL
-                AND (
-                    (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
-                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
-                    OR (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
-                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
                 )
             )
         )
@@ -308,15 +302,6 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
                     OR o.actual_supplier_slip_no <= :supplierSlipNoTo
                 )
             )
-            OR (
-                :supplierSlipNoFrom IS NOT NULL AND :supplierSlipNoTo IS NOT NULL
-                AND (
-                    (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
-                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
-                    OR (o.plan_supplier_slip_no >= :supplierSlipNoFrom AND o.actual_supplier_slip_no <= :supplierSlipNoTo)
-                    OR (o.actual_supplier_slip_no >= :supplierSlipNoFrom AND o.plan_supplier_slip_no <= :supplierSlipNoTo)
-                )
-            )
         )
 
         AND (:slipNoFrom IS NULL OR o.slip_no >= :slipNoFrom)
@@ -466,4 +451,56 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
         @Param("actualDeliveryDateTo") String actualDeliveryDateTo,
         Pageable pageable
     );
+
+    @Query("""
+    select new com.project.Zaiko.dto.InventoryOutputPlanFlatDTO(
+        o,
+        opd,
+        planDest.destinationCode, planDest.departmentName,
+        actualDest.destinationCode, actualDest.departmentName,
+        planCust.customerCode, planCust.customerName,
+        actualCust.customerCode, actualCust.customerName,
+        planRepo.repositoryCode, planRepo.repositoryName,
+        actualRepo.repositoryCode, actualRepo.repositoryName,
+        p.productCode, p.name1,
+        r2.repositoryCode, r2.repositoryName,
+        l.locationCode,
+        u1.unitName, u2.unitName, u3.unitName,
+        p.standardInfo, p.dateTimeMngType, p.isDateTimeMng, p.isNumberMng,
+        opd.totalPlanQuantity,
+        p.isPackCsInput, p.isPackBlInput, p.isPieceInput,
+        p.packCsAmount, p.packBlAmount,
+        opd.delFlg,
+        ow.customerCode, ow.customerName,
+        s.supplierCode, s.supplierName,
+        CAST(0L AS long)
+    )
+    from InventoryOutputEntity o
+    left join InventoryPlanOutPutDetailEntity opd on o.inventoryOutputId = opd.inventoryOutputId and opd.delFlg = '0'
+    left join CustomerDeliveryDestEntity planDest on o.planCustomerDeliveryDestinationId = planDest.deliveryDestinationId
+    left join CustomerDeliveryDestEntity actualDest on o.actualCustomerDeliveryDestinationId = actualDest.deliveryDestinationId
+    left join CustomerEntity planCust on o.planCustomerId = planCust.customerId
+    left join CustomerEntity actualCust on o.actualCustomerId = actualCust.customerId
+    left join RepositoryEntity planRepo on o.planRepositoryId = planRepo.repositoryId and o.companyId = planRepo.companyId
+    left join RepositoryEntity actualRepo on o.actualRepositoryId = actualRepo.repositoryId and o.companyId = actualRepo.companyId
+    left join ProductEntity p on opd.productId = p.productId and p.delFlg = '0'
+    left join RepositoryEntity r2 on opd.repositoryId = r2.repositoryId and opd.companyId = r2.companyId
+    left join LocationEntity l on opd.locationId = l.locationId
+    left join UnitNameEntity u1 on p.packCsUnitCode = u1.unitCode
+    left join UnitNameEntity u2 on p.packBlUnitCode = u2.unitCode
+    left join UnitNameEntity u3 on p.pieceUnitCode = u3.unitCode
+    left join CustomerEntity ow on opd.productOwnerId = ow.customerId
+    left join SupplierEntity s on opd.supplierId = s.supplierId
+    where o.inventoryOutputId = :id and o.delFlg = '0'
+    """)
+    List<InventoryOutputPlanFlatDTO> getInventoryOutputPlanById(@Param("id") Long id);
+
+    @Query(value = """
+        SELECT oad.plan_detail_id AS planDetailId, SUM(oad.total_actual_quantity) AS totalActualQuantity
+        FROM t_inventory_actual_output_detail oad
+        WHERE oad.inventory_output_id = :inventoryOutputId AND oad.del_flg = '0'
+        GROUP BY oad.plan_detail_id
+        """, nativeQuery = true)
+    List<Object[]> getTotalActualQuantitiesByInventoryOutputId(@Param("inventoryOutputId") Long inventoryOutputId);
+
 }

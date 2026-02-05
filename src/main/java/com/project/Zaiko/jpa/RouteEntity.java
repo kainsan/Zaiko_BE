@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "m_route")
+@IdClass(RouteId.class)
 @NamedQuery(name = "RouteEntity.findAll", query = "SELECT m FROM RouteEntity m")
 public class RouteEntity extends CommonEntity implements Serializable {
 
