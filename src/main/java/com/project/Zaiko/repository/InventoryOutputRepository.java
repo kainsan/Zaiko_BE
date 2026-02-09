@@ -473,7 +473,8 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
         opd.delFlg,
         ow.customerCode, ow.customerName,
         s.supplierCode, s.supplierName,
-        CAST(0L AS long)
+        CAST(0L AS long),
+        sp.packCsPrice, sp.packBlPrice, sp.piecePrice
     )
     from InventoryOutputEntity o
     left join InventoryPlanOutPutDetailEntity opd on o.inventoryOutputId = opd.inventoryOutputId and opd.delFlg = '0'
@@ -491,6 +492,7 @@ public interface InventoryOutputRepository extends JpaRepository<InventoryOutput
     left join UnitNameEntity u3 on p.pieceUnitCode = u3.unitCode
     left join CustomerEntity ow on opd.productOwnerId = ow.customerId
     left join SupplierEntity s on opd.supplierId = s.supplierId
+    left join SalesUnitPriceEntity sp on sp.productId = opd.productId and sp.customerId = o.actualCustomerId and sp.dateTimeMngFrom < opd.datetimeMngTo and opd.datetimeMngTo < sp.dateTimeMngTo and sp.delFlg = '0'
     where o.inventoryOutputId = :id and o.delFlg = '0'
     """)
     List<InventoryOutputPlanFlatDTO> getInventoryOutputPlanById(@Param("id") Long id);

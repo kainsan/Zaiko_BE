@@ -321,6 +321,9 @@ public class InventoryOutputService implements IInventoryOutputService {
                         detail.setSupplierName(flat.getSupplierName());
                         // Get totalActualQuantity from batch query result
                         detail.setTotalActualQuantity(actualQuantityMap.getOrDefault(planDetailId, 0L));
+                        detail.setSaleCsPrice(flat.getSaleCsPrice());
+                        detail.setSaleBlPrice(flat.getSaleBlPrice());
+                        detail.setSalePiecePrice(flat.getSalePiecePrice());
                         return detail;
                     })
                     .collect(Collectors.toList());

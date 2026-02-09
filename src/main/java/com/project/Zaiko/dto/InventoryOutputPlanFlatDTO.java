@@ -5,6 +5,8 @@ import com.project.Zaiko.jpa.InventoryPlanOutPutDetailEntity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 public class InventoryOutputPlanFlatDTO {
@@ -50,6 +52,10 @@ public class InventoryOutputPlanFlatDTO {
     private String supplierName;
     
     private Long totalActualQuantity;
+    
+    private BigDecimal saleCsPrice;
+    private BigDecimal saleBlPrice;
+    private BigDecimal salePiecePrice;
 
     public InventoryOutputPlanFlatDTO(
             InventoryOutputEntity inventoryOutputEntity,
@@ -71,7 +77,8 @@ public class InventoryOutputPlanFlatDTO {
             String delFlg,
             String ownerCode, String ownerName,
             String supplierCode, String supplierName,
-            Long totalActualQuantity
+            Long totalActualQuantity,
+            BigDecimal saleCsPrice, BigDecimal saleBlPrice, BigDecimal salePiecePrice
     ) {
         this.inventoryOutputEntity = inventoryOutputEntity;
         this.detailEntity = detailEntity;
@@ -111,6 +118,9 @@ public class InventoryOutputPlanFlatDTO {
         this.supplierCode = supplierCode;
         this.supplierName = supplierName;
         this.totalActualQuantity = totalActualQuantity;
+        this.saleCsPrice = saleCsPrice;
+        this.saleBlPrice = saleBlPrice;
+        this.salePiecePrice = salePiecePrice;
     }
 }
 

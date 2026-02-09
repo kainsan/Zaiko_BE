@@ -71,4 +71,8 @@ public class InventoryOutputPlanDetailDTO {
     private String supplierName;
     
     private Long totalActualQuantity;
+    
+    private BigDecimal saleCsPrice;
+    private BigDecimal saleBlPrice;
+    private BigDecimal salePiecePrice;
 }
